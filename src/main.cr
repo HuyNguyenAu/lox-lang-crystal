@@ -27,8 +27,6 @@ class Program
     tokens = scanner.scan_tokens()
 
     tokens.each { |token| puts token.to_string }
-    # tokens.each { |token| p! token }
-    # puts tokens
   end
   
   def run_prompt()
