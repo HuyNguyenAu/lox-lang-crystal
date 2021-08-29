@@ -23,8 +23,8 @@ class Program
   end
   
   def run(source : String)
-    scanner = Scanner.new(source)
-    tokens = scanner.scan_tokens()
+    scanner : Scanner = Scanner.new(source)
+    tokens : Array(Token) = scanner.scan_tokens()
 
     tokens.each { |token| puts token.to_string }
   end

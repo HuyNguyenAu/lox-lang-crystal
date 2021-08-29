@@ -48,7 +48,7 @@ class Scanner
     # Try to match a lexeme to create a new token so that
     # it can be added to tokens.
     private def scan_token()
-        c = advance()
+        c : Char = advance()
 
         case c
         when '('
@@ -115,8 +115,8 @@ class Scanner
             advance()
         end
 
-        text = @source[@start..(@current - 1)]
-        type = @@keywords[text]?
+        text : String = @source[@start..(@current - 1)]
+        type : TokenType | Nil = @@keywords[text]?
         if type.nil?
             type = TokenType::IDENTIFIER
         end
@@ -143,7 +143,7 @@ class Scanner
         advance()
 
         # Trim the surounding quotes.
-        value = @source[(@start + 1)..(@current - 2)]
+        value : String = @source[(@start + 1)..(@current - 2)]
         add_token(TokenType::STRING, value)
     end
 
@@ -225,7 +225,7 @@ class Scanner
 
     # Consume the next character and return it.
     private def advance() : Char
-        c = @source[@current]
+        c : Char = @source[@current]
         # Currently there is no post increment operators.
         @current += 1
         c
@@ -238,7 +238,7 @@ class Scanner
     # Take the lexeme literal to create a new token from it and
     # add it to tokens.
     private def add_token(type : TokenType, literal : Object, null : Bool = false)
-        text = @source[@start..(@current - 1)]
+        text : String = @source[@start..(@current - 1)]
         @tokens << Token.new(type, text, literal, @line, null)
     end
 end
