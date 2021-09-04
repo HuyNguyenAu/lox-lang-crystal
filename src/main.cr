@@ -55,6 +55,15 @@ class Program
     puts "[line #{line}] Error#{where}: #{message}"
     @@had_error = true
   end
+
+  # Print out the parse error which shows the token location and token lexeme.
+  def self.error(token : Token, message : String)
+    if token.type == TokenType::EOF
+      self.report(token.line, " at end", message)
+    else
+      self.report(token.line, " at '#{token.lexeme}'", message)
+    end
+  end
 end
 
-program = Program.new
+Program.new
