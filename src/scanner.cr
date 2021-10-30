@@ -3,7 +3,6 @@ require "../src/token-type.cr"
 require "../src/token.cr"
 
 class Scanner
-  @source : String = ""
   @tokens : Array(Token) = Array(Token).new
   @start : Int32 = 0   # Offset of the first character of the lexeme being scanned.
   @current : Int32 = 0 # Offset of the current character being scanned.
@@ -27,8 +26,7 @@ class Scanner
     "while"  => TokenType::WHILE,
   }
 
-  def initialize(source : String)
-    @source = source
+  def initialize(@source : String)
   end
 
   # Work through the source code adding tokens until you
