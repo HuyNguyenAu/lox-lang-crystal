@@ -1,5 +1,6 @@
 require "../src/main.cr"
 require "../src/parse-exception.cr"
+require "../src/expression.cr"
 
 class Parser
   # Expression grammar:
@@ -11,100 +12,104 @@ class Parser
   # unary          → ( "!" | "-" ) unary | primary ;
   # primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
 
-  @tokens : Array(Token) = Array(Token).new
-  @current : Int32 = 0
-
-  def initialize(tokens : Array(Token))
-    @tokens = tokens
+  def initialize(@tokens : Array(Token), @current : Int32 = 0)
   end
 
-  #   private def expression : Expression
-  #     equality()
-  #   end
+  def parse : Expression
+    begin
+      return expression()
+    rescue ParseException
+      raise "Ouch"
+    end
+  end
 
-  #   private def equality : Expression
-  #     expression = comparison()
+  private def expression : Expression
+    equality()
+  end
 
-  #     while match(TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL)
-  #       operator = previous()
-  #       right = comparison()
-  #       expression = Expression.Binary(expression, operator, right)
-  #     end
+  private def equality : Expression
+    expression = comparison()
 
-  #     expression
-  #   end
+    while match(TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL)
+      operator = previous()
+      right = comparison()
+      expression = Binary.new(expression, operator, right)
+    end
 
-  #   private def comparison : Expression
-  #     expression = term()
+    expression
+  end
 
-  #     while match(TokenType::GREATER, TokenType::GREATER_EQUAL, TokenType::LESS, TokenType::LESS_EQUAL)
-  #       operator = previous()
-  #       right = term()
-  #       expression = Expression.Binary(expression, operator, right)
-  #     end
+  private def comparison : Expression
+    expression = term()
 
-  #     expression
-  #   end
+    while match(TokenType::GREATER, TokenType::GREATER_EQUAL, TokenType::LESS, TokenType::LESS_EQUAL)
+      operator = previous()
+      right = term()
+      expression = Binary.new(expression, operator, right)
+    end
 
-  #   private def term : Expression
-  #     expression = factor()
+    expression
+  end
 
-  #     while match(TokenType::MINUS, TokenType::PLUS)
-  #       operator = previous()
-  #       right = factor()
-  #       expression = Expression.Binary(expression, operator, right)
-  #     end
+  private def term : Expression
+    expression = factor()
 
-  #     expression
-  #   end
+    while match(TokenType::MINUS, TokenType::PLUS)
+      operator = previous()
+      right = factor()
+      expression = Binary.new(expression, operator, right)
+    end
 
-  #   private def factor : Expression
-  #     expression = unary()
+    expression
+  end
 
-  #     while match(TokenType::SLASH, TokenType::STAR)
-  #       operator = previous()
-  #       right = factor()
-  #       expression = Expression.Binary(expression, operator, right)
-  #     end
+  private def factor : Expression
+    expression = unary()
 
-  #     expression
-  #   end
+    while match(TokenType::SLASH, TokenType::STAR)
+      operator = previous()
+      right = factor()
+      expression = Binary.new(expression, operator, right)
+    end
 
-  #   private def unary : Expression
-  #     if match(TokenType::SLASH, TokenType::STAR)
-  #       operator = previous()
-  #       right = unary()
-  #       return Expression.Unary(expression, operator, right)
-  #     end
+    expression
+  end
 
-  #     primary()
-  #   end
+  private def unary : Expression
+    if match(TokenType::BANG, TokenType::MINUS)
+      operator = previous()
+      right = unary()
+      return Unary.new(operator, right)
+    end
 
-  #   private def primary : Expression
-  #     if match(TokenType::FALSE)
-  #       return Expression.Literal(false)
-  #     end
+    primary()
+  end
 
-  #     if match(TokenType::TRUE)
-  #       return Expression.Literal(true)
-  #     end
+  private def primary : Expression
+    if match(TokenType::FALSE)
+      return Literal.new(false)
+    end
 
-  #     if match(TokenType::NIL)
-  #       return Expression.Literal(nil)
-  #     end
+    if match(TokenType::TRUE)
+      return Literal.new(true)
+    end
 
-  #     if match(TokenType::NUMBER, TokenType::STRING)
-  #       return Expression.Literal(previous().literal)
-  #     end
+    if match(TokenType::NIL)
+      return Literal.new(nil)
+    end
 
-  #     if match(TokenType::LEFT_PAREN)
-  #       expression = expression()
-  #       consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.")
-  #       return Expression.Grouping(expression)
-  #     end
+    if match(TokenType::NUMBER, TokenType::STRING)
+      return Literal.new(previous().literal)
+    end
 
-  #     nil
-  #   end
+    if match(TokenType::LEFT_PAREN)
+      expression = expression()
+      consume(TokenType::RIGHT_PAREN, "Expect ')' after ")
+      return Grouping.new(expression)
+    end
+
+    raise "Unexpected token '#{peek().lexeme}'!"
+  end
 
   # Check if the current token has any of the given types.
   # If so, consume it and return true, else false.
@@ -126,7 +131,8 @@ class Parser
       return advance()
     end
 
-    error(peek(), message)
+    # Can we bubble up errors like in Java?
+    raise error(peek(), message)
   end
 
   # Check if the current token is a given type.
@@ -165,7 +171,9 @@ class Parser
 
   # Report a parse error.
   private def error(token : Token, message : String) : ParseException
-    (Program.new).error(token, message)
+    # Not sure if this will call a static function with
+    # the same state and behaviour as in Java or C#.
+    Program.error(token, message)
     ParseException.new
   end
 
