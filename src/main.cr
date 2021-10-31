@@ -1,4 +1,7 @@
 require "../src/scanner.cr"
+require "../src/parser.cr"
+require "../src/expression.cr"
+require "../src/ast_printer.cr"
 
 class Program
   @@had_error : Bool = false
@@ -27,8 +30,16 @@ class Program
   def run(source : String)
     scanner : Scanner = Scanner.new(source)
     tokens : Array(Token) = scanner.scan_tokens
+    parser : Parser = Parser.new(tokens)
+    expression : Expression = parser.parse
 
-    tokens.each { |token| puts token.to_string }
+    if @@had_error
+      return
+    end
+
+    puts ASTPrinter.new().print(expression)
+
+    # tokens.each { |token| puts token.to_string }
   end
 
   # Run an interactive prompt.
