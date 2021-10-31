@@ -16,6 +16,22 @@ class Token
   def initialize(@type : TokenType, @lexeme : String, @literal : Float64, @line : Int32, @null : Bool = false)
   end
 
+  def type
+    @type
+  end
+
+  def lexeme
+    @lexeme
+  end
+
+  def literal
+    @literal
+  end
+
+  def line
+    @line
+  end
+
   # Used to show where a particular warning or error is.
   def to_string : String
     # Since Crystal handles nil differently to Java's null, in order to pass the provided tests,
