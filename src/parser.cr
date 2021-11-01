@@ -21,14 +21,16 @@ class Parser
     begin
       return expression()
     rescue ParseException
-      raise "Ouch"
+      raise "Failed to parse tokens!"
     end
   end
 
+  # Rule: expression → equality ;
   private def expression : Expression
     equality()
   end
 
+  # Rule: equality → comparison ( ( "!=" | "==" ) comparison )* ;
   private def equality : Expression
     expression = comparison()
 
@@ -41,6 +43,8 @@ class Parser
     expression
   end
 
+  
+  # Rule: comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
   private def comparison : Expression
     expression = term()
 
@@ -53,6 +57,7 @@ class Parser
     expression
   end
 
+  # Rule: term → factor ( ( "-" | "+" ) factor )* ;
   private def term : Expression
     expression = factor()
 
@@ -65,6 +70,7 @@ class Parser
     expression
   end
 
+  # Rule: factor → unary ( ( "/" | "*" ) unary )* ;
   private def factor : Expression
     expression = unary()
 
@@ -77,6 +83,7 @@ class Parser
     expression
   end
 
+  # Rule: unary → ( "!" | "-" ) unary | primary ;
   private def unary : Expression
     if match(TokenType::BANG, TokenType::MINUS)
       operator = previous()
@@ -87,6 +94,8 @@ class Parser
     primary()
   end
 
+  
+  # Rule: primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
   private def primary : Expression
     if match(TokenType::FALSE)
       return Literal.new(false)

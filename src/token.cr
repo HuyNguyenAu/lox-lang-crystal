@@ -16,18 +16,22 @@ class Token
   def initialize(@type : TokenType, @lexeme : String, @literal : Float64, @line : Int32, @null : Bool = false)
   end
 
+  # A token type gives a lexeme its meaning (reserved word).
   def type
     @type
   end
 
+  # Lexeme are grouping of characters from the source code.
   def lexeme
     @lexeme
   end
 
+  # A literal is for strings and numbers. Not all lexeme are literals.
   def literal
     @literal
   end
 
+  # Keep track of which line a lexeme is found.
   def line
     @line
   end

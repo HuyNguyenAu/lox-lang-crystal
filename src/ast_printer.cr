@@ -28,6 +28,7 @@ class ASTPrinter < Visitor
     parenthesise(expression.operator.lexeme, [expression.right])
   end
 
+  # Convert an expression into it's syntax tree text representation.
   def parenthesise(name : String, expressions : Array(Expression)) : String
     builder = "(#{name}"
 
