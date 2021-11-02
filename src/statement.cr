@@ -1,5 +1,7 @@
 require "../src/token.cr"
 
+# Basic Visitor pattern was adapted from https://github.com/crystal-community/crystal-patterns/blob/master/behavioral/visitor.cr.
+
 abstract class Visitor
   # abstract def visit(statement : Block)
   # abstract def visit(statement : Class)

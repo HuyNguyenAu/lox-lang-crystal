@@ -3,8 +3,6 @@ require "../src/parse-exception.cr"
 require "../src/expression.cr"
 require "../src/statement.cr"
 
-# Basic Visitor pattern was adapted from https://github.com/crystal-community/crystal-patterns/blob/master/behavioral/visitor.cr.
-
 class Parser
   # Expression grammar:
   # expression     → equality ;

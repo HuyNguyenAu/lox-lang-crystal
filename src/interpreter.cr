@@ -102,7 +102,8 @@ class Interpreter < Visitor
     evaluate(statement.expression)
   end
 
-  # 
+  # A print statement returns no value and only needs to print what the
+  # statement expression evaluates to.
   def visit(statement : Print)
     value = evaluate(statement.expression)
     puts "#{stringify(value)}"
@@ -182,11 +183,13 @@ class Interpreter < Visitor
   end
 
   # Unwind the expression by send this expression back into
-  # the interpreter's visitor implementation.
+  # the interpreter's visitor implementation for expressions.
   private def evaluate(expression : Expression) : Bool | Float64 | String | Nil
     expression.accept(self)
   end
 
+  # Unwind the statement by send this statement back into
+  # the interpreter's visitor implementation for statements.
   private def execute(statement : Statement)
     statement.accept(self)
   end
