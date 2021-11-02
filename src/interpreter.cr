@@ -8,10 +8,13 @@ class Interpreter < Visitor
   def initialize
   end
 
-  def interpret(expression : Expression)
+  def interpret(statements : Array(Statement))
     begin
-      value = stringify(evaluate(expression))
-      puts "#{value}"
+      i = 0
+      while i < statements.size
+        execute(statements[i])
+        i += 1
+      end
     rescue error : RuntimeException
       Program.runtime_error(error)
     end
@@ -39,7 +42,7 @@ class Interpreter < Visitor
       return left.as(Float64) - right.as(Float64)
     when TokenType::PLUS
       if left.is_a?(Float64) && right.is_a?(Float64)
-        return left.as(Float64) - right.as(Float64)
+        return left.as(Float64) + right.as(Float64)
       end
 
       if left.is_a?(String) && right.is_a?(String)
@@ -91,6 +94,18 @@ class Interpreter < Visitor
 
     # Unreachable.
     nil
+  end
+
+  # Statements produce no values. We only need to evaluate the
+  # expression and then discard the result.
+  def visit(statement : ExpressionStatement)
+    evaluate(statement.expression)
+  end
+
+  # 
+  def visit(statement : Print)
+    value = evaluate(statement.expression)
+    puts "#{stringify(value)}"
   end
 
   # Check if the operand is a Float64, otherwise raise a Runtime Exception.
@@ -170,5 +185,9 @@ class Interpreter < Visitor
   # the interpreter's visitor implementation.
   private def evaluate(expression : Expression) : Bool | Float64 | String | Nil
     expression.accept(self)
+  end
+
+  private def execute(statement : Statement)
+    statement.accept(self)
   end
 end

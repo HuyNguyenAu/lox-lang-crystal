@@ -36,19 +36,16 @@ class Program
 
   # WIP
   def run(source : String)
-    scanner : Scanner = Scanner.new(source)
-    tokens : Array(Token) = scanner.scan_tokens
-    parser : Parser = Parser.new(tokens)
-    expression : Expression = parser.parse
-
+    scanner = Scanner.new(source)
+    tokens = scanner.scan_tokens()
+    parser = Parser.new(tokens)
+    statements = parser.parse()
+    
     if @@had_error
       return
     end
 
-    @@interpreter.interpret(expression)
-
-    # puts ASTPrinter.new().print(expression)
-    # tokens.each { |token| puts token.to_string }
+    @@interpreter.interpret(statements)
   end
 
   # Run an interactive prompt.
@@ -56,7 +53,7 @@ class Program
     loop do
       print "> "
 
-      line : String | Nil = gets
+      line = gets
       if line.nil?
         break
       end

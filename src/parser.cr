@@ -1,6 +1,7 @@
 require "../src/main.cr"
 require "../src/parse-exception.cr"
 require "../src/expression.cr"
+require "../src/statement.cr"
 
 # Basic Visitor pattern was adapted from https://github.com/crystal-community/crystal-patterns/blob/master/behavioral/visitor.cr.
 
@@ -14,15 +15,47 @@ class Parser
   # unary          → ( "!" | "-" ) unary | primary ;
   # primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
 
+  # Parser grammar:
+  # program        → statement* EOF ;
+  # statement      → exprStmt | printStmt ;
+  # exprStmt       → expression ";" ;
+  # printStmt      → "print" expression ";" ;
+
   def initialize(@tokens : Array(Token), @current : Int32 = 0)
   end
 
-  def parse : Expression
-    begin
-      return expression()
-    rescue ParseException
-      raise "Failed to parse tokens!"
+  # Parse a series of statements until the end.
+  def parse : Array(Statement)
+    statements = Array(Statement).new()
+
+    while !is_at_end()
+      statements << statement()
     end
+
+    statements
+  end
+
+  # Rule: statement → exprStmt | printStmt ;
+  private def statement : Statement
+    if match(TokenType::PRINT)
+      return print_statement()
+    end
+
+    expression_statement()
+  end
+
+  # Rule: printStmt → "print" expression ";" ;
+  private def print_statement : Statement
+    value = expression()
+    consume(TokenType::SEMICOLON, "Expect ';' after value.")
+    Print.new(value)
+  end
+
+  # Rule: exprStmt → expression ";" ;
+  private def expression_statement : Statement
+    expression = expression()
+    consume(TokenType::SEMICOLON, "Expect ';' after expression.")
+    ExpressionStatement.new(expression)
   end
 
   # Rule: expression → equality ;
