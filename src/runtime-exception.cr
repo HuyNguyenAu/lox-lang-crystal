@@ -1,14 +1,14 @@
 require "../src/token.cr"
 
 class RuntimeException < Exception
-  def initialize(@token : Token, @message : String)
+  def initialize(@token : Token, @message : String | Nil)
   end
 
-  def token
+  def token : Token
     @token
   end
 
-  def message
+  def message : String | Nil
     @message
   end
 end

@@ -43,7 +43,6 @@ class Parser
     expression
   end
 
-  
   # Rule: comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
   private def comparison : Expression
     expression = term()
@@ -94,7 +93,6 @@ class Parser
     primary()
   end
 
-  
   # Rule: primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
   private def primary : Expression
     if match(TokenType::FALSE)

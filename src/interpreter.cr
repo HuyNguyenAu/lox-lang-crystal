@@ -17,7 +17,7 @@ class Interpreter < Visitor
     end
   end
 
-  def visit(expression : Binary)
+  def visit(expression : Binary) : Bool | Float64 | String | Nil
     left = evaluate(expression.left)
     right = evaluate(expression.right)
 
@@ -66,17 +66,17 @@ class Interpreter < Visitor
   # A grouping node contains a node which can be
   # recursively deep. We need to go into the expression
   # and evaluate the inner expression.
-  def visit(expression : Grouping)
+  def visit(expression : Grouping) : Bool | Float64 | String | Nil
     evaluate(expression.expression)
   end
 
   # Convert the literal syntax tree node into a runtime value.
-  def visit(expression : Literal)
+  def visit(expression : Literal) : Bool | Float64 | String | Nil
     expression.value
   end
 
   # A unary an expression with a preceding '-' or '!'.
-  def visit(expression : Unary)
+  def visit(expression : Unary) : Bool | Float64 | String | Nil
     right = evaluate(expression.right)
 
     case expression.operator.type
@@ -95,7 +95,7 @@ class Interpreter < Visitor
 
   # Check if the operand is a Float64, otherwise raise a Runtime Exception.
   private def check_number_operand(operator : Token, operand : Bool | Float64 | String | Nil)
-    check : Bool | Nil = operand.is_a?(Float64)
+    check = operand.is_a?(Float64)
 
     if !check.nil? && check
       return
@@ -106,8 +106,8 @@ class Interpreter < Visitor
 
   # Check if the left annd right operands are Float64, otherwise raise a Runtime Exception.
   private def check_number_operands(operator : Token, left, right)
-    check_left : Bool | Nil = left.is_a?(Float64)
-    check_right : Bool | Nil = right.is_a?(Float64)
+    check_left = left.is_a?(Float64)
+    check_right = right.is_a?(Float64)
 
     if !check_left.nil? && !check_right.nil? && check_left && check_right
       return
@@ -146,15 +146,15 @@ class Interpreter < Visitor
   end
 
   # Convert and object to string.
-  private def stringify(object) : String
+  private def stringify(object : Bool | Float64 | String | Nil) : String
     if object.nil?
       return "nil"
     end
 
-    check : Bool | Nil = object.is_a?(Float64)
+    check = object.is_a?(Float64)
 
     if !check.nil? && check
-      text : String = "#{object}"
+      text = "#{object}"
 
       if text.ends_with?(".0")
         text = text[0, text.size - 2]
@@ -168,7 +168,7 @@ class Interpreter < Visitor
 
   # Unwind the expression by send this expression back into
   # the interpreter's visitor implementation.
-  private def evaluate(expression : Expression)
+  private def evaluate(expression : Expression) : Bool | Float64 | String | Nil
     expression.accept(self)
   end
 end

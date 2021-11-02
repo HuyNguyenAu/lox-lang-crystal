@@ -34,12 +34,12 @@ class ASTPrinter < Visitor
 
     i = 0
     while true
-        if i > expressions.size - 1
-            break
-        end
-        expression = expressions[i]
-        builder += " #{expression.accept(self)}"
-        i += 1
+      if i > expressions.size - 1
+        break
+      end
+      expression = expressions[i]
+      builder += " #{expression.accept(self)}"
+      i += 1
     end
 
     builder += ")"

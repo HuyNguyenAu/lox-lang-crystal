@@ -2,21 +2,21 @@ require "../src/token.cr"
 
 abstract class Visitor
   # abstract def visit(expression : Assign)
-  abstract def visit(expression : Binary)
+  abstract def visit(expression : Binary) : Bool | Float64 | String | Nil
   # abstract def visit(expression : Call)
   # abstract def visit(expression : Gets)
-  abstract def visit(expression : Grouping)
-  abstract def visit(expression : Literal)
+  abstract def visit(expression : Grouping) : Bool | Float64 | String | Nil
+  abstract def visit(expression : Literal) : Bool | Float64 | String | Nil
   # abstract def visit(expression : Logical)
   # abstract def visit(expression : Sets)
   # abstract def visit(expression : Super)
   # abstract def visit(expression : This)
-  abstract def visit(expression : Unary)
+  abstract def visit(expression : Unary) : Bool | Float64 | String | Nil
   # abstract def visit(expression : Variable)
 end
 
 abstract class Expression
-  abstract def accept(vistor : Visitor)
+  abstract def accept(vistor : Visitor) : Bool | Float64 | String | Nil
 end
 
 # class Assign < Expression
@@ -40,19 +40,19 @@ class Binary < Expression
   def initialize(@left : Expression, @operator : Token, @right : Expression)
   end
 
-  def accept(visitor : Visitor)
+  def accept(visitor : Visitor) : Bool | Float64 | String | Nil
     visitor.visit(self)
   end
 
-  def left
+  def left : Expression
     @left
   end
 
-  def operator
+  def operator : Token
     @operator
   end
 
-  def right
+  def right : Expression
     @right
   end
 end
@@ -99,11 +99,11 @@ class Grouping < Expression
   def initialize(@expression : Expression)
   end
 
-  def accept(visitor : Visitor)
+  def accept(visitor : Visitor) : Bool | Float64 | String | Nil
     visitor.visit(self)
   end
 
-  def expression
+  def expression : Expression
     @expression
   end
 end
@@ -112,11 +112,11 @@ class Literal < Expression
   def initialize(@value : Bool | Nil | Float64 | String)
   end
 
-  def accept(visitor : Visitor)
+  def accept(visitor : Visitor) : Bool | Float64 | String | Nil
     visitor.visit(self)
   end
 
-  def value
+  def value : Bool | Nil | Float64 | String
     @value
   end
 end
@@ -173,15 +173,15 @@ class Unary < Expression
   def initialize(@operator : Token, @right : Expression)
   end
 
-  def accept(visitor : Visitor)
+  def accept(visitor : Visitor) : Bool | Float64 | String | Nil
     visitor.visit(self)
   end
 
-  def operator
+  def operator : Token
     @operator
   end
 
-  def right
+  def right : Expression
     @right
   end
 end
