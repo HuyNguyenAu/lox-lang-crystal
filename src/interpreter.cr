@@ -8,6 +8,7 @@ class Interpreter < Visitor
   def initialize
   end
 
+  # Go through all statements and evaluate it.
   def interpret(statements : Array(Statement))
     begin
       i = 0
@@ -20,6 +21,8 @@ class Interpreter < Visitor
     end
   end
 
+  # A binary expression evaluates to a value.
+  # We need to evaluate the two operands with it's operator.
   def visit(expression : Binary) : Bool | Float64 | String | Nil
     left = evaluate(expression.left)
     right = evaluate(expression.right)
