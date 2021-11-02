@@ -3,7 +3,7 @@ require "../src/token-type.cr"
 require "../src/token.cr"
 
 class Scanner
-  @tokens : Array(Token) = Array(Token).new
+  @tokens : Array(Token) = Array(Token).new()
   @start : Int32 = 0   # Offset of the first character of the lexeme being scanned.
   @current : Int32 = 0 # Offset of the current character being scanned.
   @line : Int32 = 1    # Track the line of the current character is on.

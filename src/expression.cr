@@ -44,15 +44,15 @@ class Binary < Expression
     visitor.visit(self)
   end
 
-  def left : Expression
+  def left
     @left
   end
 
-  def operator : Token
+  def operator
     @operator
   end
 
-  def right : Expression
+  def right
     @right
   end
 end
@@ -103,11 +103,11 @@ class Grouping < Expression
     visitor.visit(self)
   end
 
-  def expression : Expression
+  def expression
     @expression
   end
 end
-
+ 
 class Literal < Expression
   def initialize(@value : Bool | Nil | Float64 | String)
   end
@@ -116,7 +116,7 @@ class Literal < Expression
     visitor.visit(self)
   end
 
-  def value : Bool | Nil | Float64 | String
+  def value
     @value
   end
 end
@@ -177,11 +177,11 @@ class Unary < Expression
     visitor.visit(self)
   end
 
-  def operator : Token
+  def operator
     @operator
   end
 
-  def right : Expression
+  def right
     @right
   end
 end
