@@ -1,10 +1,14 @@
 require "../src/scanner.cr"
 require "../src/parser.cr"
 require "../src/expression.cr"
+require "../src/runtime-exception.cr"
+require "../src/interpreter.cr"
 require "../src/ast_printer.cr"
 
 class Program
+  @@interpreter : Interpreter = Interpreter.new
   @@had_error : Bool = false
+  @@had_runtime_error : Bool = false
 
   def initialize
     if ARGC_UNSAFE > 2
@@ -24,6 +28,10 @@ class Program
     if @@had_error
       exit(65)
     end
+
+    if @@had_runtime_error
+      exit(70)
+    end
   end
 
   # WIP
@@ -37,8 +45,9 @@ class Program
       return
     end
 
-    puts ASTPrinter.new().print(expression)
+    @@interpreter.interpret(expression)
 
+    # puts ASTPrinter.new().print(expression)
     # tokens.each { |token| puts token.to_string }
   end
 
@@ -59,6 +68,11 @@ class Program
   # Print out the error and line number.
   def self.error(line : Int32, message : String)
     self.report(line, "", message)
+  end
+
+  def self.runtime_error(error : RuntimeException)
+    puts "#{error.message}\n[line #{error.token.line}]"
+    @@had_runtime_error = true
   end
 
   # Print out the error and line number.
