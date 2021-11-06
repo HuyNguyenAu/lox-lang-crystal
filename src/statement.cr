@@ -10,7 +10,7 @@ abstract class Visitor
   # abstract def visit(statement : If)
   abstract def visit(statement : Print)
   # abstract def visit(statement : Return)
-  # abstract def visit(statement : Var)
+  abstract def visit(statement : Var)
   # abstract def visit(statement : While)
 end
 
@@ -137,22 +137,22 @@ end
 #   end
 # end
 
-# class Var < Statement
-#   def initialize(@name : Token, @initialiser : Expression)
-#   end
+class Var < Statement
+  def initialize(@name : Token, @initialiser : Expression)
+  end
 
-#   def accept(visitor : Visitor)
-#     visitor.visit(self)
-#   end
+  def accept(visitor : Visitor)
+    visitor.visit(self)
+  end
 
-#   def name
-#     @name
-#   end
+  def name
+    @name
+  end
 
-#   def initialiser
-#     @initialiser
-#   end
-# end
+  def initialiser
+    @initialiser
+  end
+end
 
 # class While < Statement
 #   def initialize(@condition : Expression, @body : Statement)

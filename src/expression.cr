@@ -14,7 +14,7 @@ abstract class Visitor
   # abstract def visit(expression : Super)
   # abstract def visit(expression : This)
   abstract def visit(expression : Unary) : Bool | Float64 | String | Nil
-  # abstract def visit(expression : Variable)
+  abstract def visit(expression : Variable)
 end
 
 abstract class Expression
@@ -188,11 +188,15 @@ class Unary < Expression
   end
 end
 
-# class Variable < Expression
-#   def initialize(@name : Token)
-#   end
+class Variable < Expression
+  def initialize(@name : Token | Nil)
+  end
 
-#   def accept(visitor : Visitor)
-#     visitor.visit(self)
-#   end
-# end
+  def accept(visitor : Visitor)
+    visitor.visit(self)
+  end
+
+  def name
+    @name
+  end
+end

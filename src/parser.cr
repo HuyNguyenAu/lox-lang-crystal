@@ -11,23 +11,25 @@ class Parser
   # term           → factor ( ( "-" | "+" ) factor )* ;
   # factor         → unary ( ( "/" | "*" ) unary )* ;
   # unary          → ( "!" | "-" ) unary | primary ;
-  # primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+  # primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
 
   # Parser grammar:
-  # program        → statement* EOF ;
+  # program        → declaration* EOF ;
+  # declaration    → varDecl | statement ;
   # statement      → exprStmt | printStmt ;
   # exprStmt       → expression ";" ;
   # printStmt      → "print" expression ";" ;
+  # varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
 
   def initialize(@tokens : Array(Token), @current : Int32 = 0)
   end
 
   # Parse a series of statements until the end.
   def parse : Array(Statement)
-    statements = Array(Statement).new()
+    statements = Array(Statement).new
 
     while !is_at_end()
-      statements << statement()
+      statements << declaration()
     end
 
     statements
@@ -49,6 +51,19 @@ class Parser
     Print.new(value)
   end
 
+  # Rule: varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
+  private def var_declaration : Statement
+    name = consume(TokenType::IDENTIFIER, "Expect variable name.")
+    initialiser = nil;
+    
+    if match(TokenType::EQUAL)
+      initialiser = expression()
+    end
+
+    consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.")
+    Variable.new(name, initialiser);
+  end
+
   # Rule: exprStmt → expression ";" ;
   private def expression_statement : Statement
     expression = expression()
@@ -59,6 +74,19 @@ class Parser
   # Rule: expression → equality ;
   private def expression : Expression
     equality()
+  end
+
+  # Rule:declaration → varDecl | statement ;
+  private def declaration : Expression
+    begin
+      if match(TokenType::VAR)
+        return var_declaration()
+      end
+    rescue ParseException
+      # When we run into an error, skip to the start
+      # of the next statement or declaration.
+      synchronise()
+    end
   end
 
   # Rule: equality → comparison ( ( "!=" | "==" ) comparison )* ;
@@ -124,7 +152,7 @@ class Parser
     primary()
   end
 
-  # Rule: primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+  # Rule: primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER;
   private def primary : Expression
     if match(TokenType::FALSE)
       return Literal.new(false)
@@ -141,6 +169,10 @@ class Parser
     if match(TokenType::NUMBER, TokenType::STRING)
       return Literal.new(previous().literal)
     end
+
+    if match(TokenType::IDENTIFIER)
+      return Variable.new(previous())
+    end 
 
     if match(TokenType::LEFT_PAREN)
       expression = expression()
