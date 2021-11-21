@@ -1,3 +1,5 @@
-class ParseException < Exception
-  @tokens : Array(Token) = Array(Token).new()
+module Lox
+  class ParseException < Exception
+    @tokens : Array(Token) = Array(Token).new
+  end
 end
