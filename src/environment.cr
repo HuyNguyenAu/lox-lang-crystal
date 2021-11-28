@@ -18,5 +18,15 @@ module Lox
     def define(name : String, value : Bool | Float64 | String | Nil)
       @values[name] = value
     end
+
+    # Update a variable with a new value in the current enviroment.
+    def assign(name : Token, value)
+      if @values.has_key?(name.lexeme)
+        @values[name.lexeme] = value
+        return
+      end
+      
+      raise RuntimeException.new(name, "Undefined variable '#{name.lexeme}'.") 
+    end
   end
 end

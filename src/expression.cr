@@ -2,22 +2,22 @@ require "../src/token.cr"
 
 module Lox
   abstract class Expression
-    # class Assign < Expression
-    #   def initialize(@token : Token, @value : Expression)
-    #   end
+    class Assign < Expression
+      def initialize(@name : Token, @value : Expression)
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit_assign_expression(self)
-    #   end
+      def accept(visitor)
+        visitor.visit_assign_expression(self)
+      end
 
-    #   def token
-    #     @token
-    #   end
+      def name
+        @name
+      end
 
-    #   def value
-    #     @value
-    #   end
-    # end
+      def value
+        @value
+      end
+    end
 
     class Binary < Expression
       def initialize(@left : Expression, @operator : Token, @right : Expression)
