@@ -6,7 +6,8 @@ require "./statement.cr"
 module Lox
   class Parser
     # Expression grammar:
-    # expression     → equality ;
+    # expression     → assigment ;
+    # assignment     → IDENTIFIER "=" assignment | equality ;
     # equality       → comparison ( ( "!=" | "==" ) comparison )* ;
     # comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
     # term           → factor ( ( "-" | "+" ) factor )* ;
