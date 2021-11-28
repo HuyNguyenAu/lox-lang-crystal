@@ -122,10 +122,10 @@ module Lox
 
     # When we encounter a variable statement we need to store it in out current enviroment.
     def visit_variable_statement(statement : Statement)
+      value = nil
+
       if statement.initialiser
         value = evaluate(statement.initialiser.as(Expression))
-      else
-        value = nil
       end
 
       @enviroment.define(statement.name.lexeme, value)
