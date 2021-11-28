@@ -101,8 +101,15 @@ module Lox
 
     # Forward the work to the enviroment which makes sure the
     # variable is defined.
-    def visit_variable_expression(expression : Expression)
+    def visit_variable_expression(expression : Expression::Variable)
       return @enviroment.get(expression.name)
+    end
+
+    #
+    def visit_assign_expression(expression : Expression::Assign)
+      value = evaluate(expression.value)
+      @enviroment.assign(expression.name, value)
+      value
     end
 
     # Statements produce no values. We only need to evaluate the

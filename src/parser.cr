@@ -93,10 +93,30 @@ module Lox
       end
     end
 
-    # Rule: expression → equality ;
+    # Rule: expression → assigment ;
     private def expression : Expression
       puts "expression"
-      equality()
+      assignment()
+    end
+
+    # Rule: assignment → IDENTIFIER "=" assignment | equality ;
+    private def assignment() : Expression
+      puts "assigment"
+      expr = equality()
+
+      if match(TokenType::EQUAL)
+        equals = previous()
+        value = assignment()
+
+        if expr.is_a?(Expression::Variable)
+          name = (expr.as(Expression::Variable)).name()
+          return Expression::Assign.new(name, value)
+        end
+
+        error(equals, "Invalid assignment target.")
+      end
+
+      expr
     end
 
     # Rule: equality → comparison ( ( "!=" | "==" ) comparison )* ;
