@@ -105,7 +105,8 @@ module Lox
       return @enviroment.get(expression.name)
     end
 
-    #
+    # Evaluate the right hand side to get the value, then
+    # store it in the named variable.
     def visit_assign_expression(expression : Expression::Assign)
       value = evaluate(expression.value)
       @enviroment.assign(expression.name, value)
