@@ -27,10 +27,11 @@ module Lox
 
     # Parse a series of statements until the end.
     def parse : Array(Statement)
-      statements = Array(Statement).new
+      statements = Array(Statement).new()
 
       while !is_at_end()
-        statements << declaration()
+        decl = declaration()
+        statements << decl unless decl.nil?
       end
 
       statements
@@ -38,6 +39,7 @@ module Lox
 
     # Rule: statement → exprStmt | printStmt ;
     private def statement : Statement
+      puts "statement"
       if match(TokenType::PRINT)
         return print_statement()
       end
@@ -47,62 +49,64 @@ module Lox
 
     # Rule: printStmt → "print" expression ";" ;
     private def print_statement : Statement
+      puts "print_statement"
       value = expression()
       consume(TokenType::SEMICOLON, "Expect ';' after value.")
-      PrintStatement.new(value)
+      Statement::Print.new(value)
     end
 
     # Rule: varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
     private def var_declaration : Statement
+      puts "var_declaration"
       name = consume(TokenType::IDENTIFIER, "Expect variable name.")
-      initialiser = LiteralExpression.new(nil)
+      initialiser = nil
       if match(TokenType::EQUAL)
         initialiser = expression()
       end
 
       consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.")
-      VariableStatement.new(name, initialiser)
+      Statement::Variable.new(name, initialiser)
     end
 
     # Rule: exprStmt → expression ";" ;
     private def expression_statement : Statement
+      puts "expression_statement"
       expression = expression()
       consume(TokenType::SEMICOLON, "Expect ';' after expression.")
-      ExpressionStatement.new(expression)
+      Statement::Expression.new(expression)
     end
 
     # Rule: declaration → varDecl | statement ;
-    private def declaration : Statement
+    private def declaration : Statement | Nil
+      puts "declaration"
       begin
         if match(TokenType::VAR)
           return var_declaration()
         end
+        return statement()
       rescue ParseException
         # When we run into an error, skip to the start
         # of the next statement or declaration.
         synchronise()
+        return nil
       end
-
-      # Instead of returning a Nil, we can return an
-      # empty statement that indicates we found nothing.
-      # Currently, Crystal lang will throw an error
-      # even though you check if it is a Nil. Very odd.
-      EmptyStatement.new
     end
 
     # Rule: expression → equality ;
     private def expression : Expression
+      puts "expression"
       equality()
     end
 
     # Rule: equality → comparison ( ( "!=" | "==" ) comparison )* ;
     private def equality : Expression
+      puts "equality"
       expression = comparison()
 
       while match(TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL)
         operator = previous()
         right = comparison()
-        expression = BinaryExpression.new(expression, operator, right)
+        expression = Expression::Binary.new(expression, operator, right)
       end
 
       expression
@@ -110,12 +114,13 @@ module Lox
 
     # Rule: comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
     private def comparison : Expression
+      puts "comparison"
       expression = term()
 
       while match(TokenType::GREATER, TokenType::GREATER_EQUAL, TokenType::LESS, TokenType::LESS_EQUAL)
         operator = previous()
         right = term()
-        expression = BinaryExpression.new(expression, operator, right)
+        expression = Expression::Binary.new(expression, operator, right)
       end
 
       expression
@@ -123,12 +128,13 @@ module Lox
 
     # Rule: term → factor ( ( "-" | "+" ) factor )* ;
     private def term : Expression
+      puts "term"
       expression = factor()
 
       while match(TokenType::MINUS, TokenType::PLUS)
         operator = previous()
         right = factor()
-        expression = BinaryExpression.new(expression, operator, right)
+        expression = Expression::Binary.new(expression, operator, right)
       end
 
       expression
@@ -136,12 +142,13 @@ module Lox
 
     # Rule: factor → unary ( ( "/" | "*" ) unary )* ;
     private def factor : Expression
+      puts "factor"
       expression = unary()
 
       while match(TokenType::SLASH, TokenType::STAR)
         operator = previous()
         right = factor()
-        expression = BinaryExpression.new(expression, operator, right)
+        expression = Expression::Binary.new(expression, operator, right)
       end
 
       expression
@@ -149,10 +156,11 @@ module Lox
 
     # Rule: unary → ( "!" | "-" ) unary | primary ;
     private def unary : Expression
+      puts "unary"
       if match(TokenType::BANG, TokenType::MINUS)
         operator = previous()
         right = unary()
-        return UnaryExpression.new(operator, right)
+        Expression::Unary.new(operator, right)
       end
 
       primary()
@@ -160,30 +168,31 @@ module Lox
 
     # Rule: primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER;
     private def primary : Expression
+      puts "primary"
       if match(TokenType::FALSE)
-        return LiteralExpression.new(false)
+        return Expression::Literal.new(false)
       end
 
       if match(TokenType::TRUE)
-        return LiteralExpression.new(true)
+        return Expression::Literal.new(true)
       end
 
       if match(TokenType::NIL)
-        return LiteralExpression.new(nil)
+        return Expression::Literal.new(nil)
       end
 
       if match(TokenType::NUMBER, TokenType::STRING)
-        return LiteralExpression.new(previous().literal)
+        return Expression::Literal.new(previous().literal)
       end
 
       if match(TokenType::IDENTIFIER)
-        return VariableExpression.new(previous())
+        return Expression::Variable.new(previous())
       end
 
       if match(TokenType::LEFT_PAREN)
         expression = expression()
         consume(TokenType::RIGHT_PAREN, "Expect ')' after ")
-        return GroupingExpression.new(expression)
+        return Expression::Grouping.new(expression)
       end
 
       raise "Unexpected token '#{peek().lexeme}'!"
@@ -252,7 +261,7 @@ module Lox
       # Not sure if this will call a static function with
       # the same state and behaviour as in Java or C#.
       Program.error(token, message)
-      ParseException.new
+      ParseException.new()
     end
 
     # When we raise a parse error, we might be still in the statement that

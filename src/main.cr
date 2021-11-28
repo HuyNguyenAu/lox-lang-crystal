@@ -38,9 +38,9 @@ module Lox
     # WIP
     def run(source : String)
       scanner = Scanner.new(source)
-      tokens = scanner.scan_tokens
+      tokens = scanner.scan_tokens()
       parser = Parser.new(tokens)
-      statements = parser.parse
+      statements = parser.parse()
 
       if @@had_error
         return

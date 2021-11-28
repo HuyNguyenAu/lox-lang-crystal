@@ -23,7 +23,7 @@ module Lox
 
     # A binary expression evaluates to a value.
     # We need to evaluate the two operands with it's operator.
-    def visit(expression : BinaryExpression)
+    def visit_binary_expression(expression : Expression)
       left = evaluate(expression.left)
       right = evaluate(expression.right)
 
@@ -72,17 +72,17 @@ module Lox
     # A grouping node contains a node which can be
     # recursively deep. We need to go into the expression
     # and evaluate the inner expression.
-    def visit(expression : GroupingExpression)
+    def visit_grouping_expression(expression : Expression)
       evaluate(expression.expression)
     end
 
     # Convert the literal syntax tree node into a runtime value.
-    def visit(expression : LiteralExpression)
+    def visit_literal_expression(expression : Expression)
       expression.value
     end
 
     # A unary an expression with a preceding '-' or '!'.
-    def visit(expression : UnaryExpression)
+    def visit_unary_expression(expression : Expression)
       right = evaluate(expression.right)
 
       case expression.operator.type
@@ -100,29 +100,37 @@ module Lox
     end
 
     #
-    def visit(expression : VariableExpression)
-      @enviroment.get(expression.name)
+    def visit_variable_expression(expression : Expression)
+      return @enviroment.get(expression.name)
     end
 
     # Statements produce no values. We only need to evaluate the
     # expression and then discard the result.
-    def visit(statement : ExpressionStatement)
+    def visit_expression_statement(statement : Statement)
       evaluate(statement.expression)
+      nil
     end
 
     # A print statement returns no value and only needs to print what the
     # statement expression evaluates to.
-    def visit(statement : PrintStatement)
+    def visit_print_statement(statement : Statement)
       value = evaluate(statement.expression)
       puts "#{stringify(value)}"
+
+      nil
     end
 
-    # When we encounter a var statement we need to store it in out current enviroment.
-    def visit(statement : VariableStatement)
-      value = nil
-      value = evaluate(statement.initialiser) unless statement.initialiser.nil?
+    # When we encounter a variable statement we need to store it in out current enviroment.
+    def visit_variable_statement(statement : Statement)
+      if statement.initialiser
+        value = evaluate(statement.initialiser.as(Expression))
+      else
+        value = nil
+      end
 
       @enviroment.define(statement.name.lexeme, value)
+      
+      nil
     end
 
     # Check if the operand is a Float64, otherwise raise a Runtime Exception.
