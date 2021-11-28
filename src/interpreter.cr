@@ -99,7 +99,8 @@ module Lox
       nil
     end
 
-    #
+    # Forward the work to the enviroment which makes sure the
+    # variable is defined.
     def visit_variable_expression(expression : Expression)
       return @enviroment.get(expression.name)
     end

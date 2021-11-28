@@ -35,7 +35,7 @@ module Lox
       end
     end
 
-    # WIP
+    # Scan, parse, and interpret the provioded source.
     def run(source : String)
       scanner = Scanner.new(source)
       tokens = scanner.scan_tokens()
