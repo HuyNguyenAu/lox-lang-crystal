@@ -169,7 +169,7 @@ module Lox
         return
       end
 
-      raise RuntimeException.new(operator, "Operands must be a number.")
+      raise RuntimeException.new(operator, "Operands must be numbers.")
     end
 
     # Convert an object to bool. Nils are false.
