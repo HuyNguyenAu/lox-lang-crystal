@@ -188,7 +188,7 @@ module Lox
 
       while match(TokenType::SLASH, TokenType::STAR)
         operator = previous()
-        right = factor()
+        right = unary()
         expression = Expression::Binary.new(expression, operator, right)
       end
 
