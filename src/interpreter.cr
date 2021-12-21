@@ -94,7 +94,7 @@ module Lox
 
       case expression.operator.type
       when TokenType::BANG
-        return is_truthy(right)
+        return !is_truthy(right)
       when TokenType::MINUS
         check_number_operand(expression.operator, right)
         # Here we're meant to use double, but
@@ -139,8 +139,6 @@ module Lox
       else
         puts output
       end
-
-      
 
       nil
     end
