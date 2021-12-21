@@ -144,10 +144,12 @@ module Lox
     # An if statment contains a must always contain a then branch statement.
     # An else branch statement is optional.
     def visit_if_statement(statement : Statement::If)
-      execute(statement.then_branch) unless !is_truthy(evaluate(statement.condition))
-
-      else_branch = statement.else_branch
-      execute(else_branch) unless else_branch.nil?
+      if is_truthy(evaluate(statement.condition))
+        execute(statement.then_branch)
+      else
+        else_branch = statement.else_branch
+        execute(else_branch) unless else_branch.nil?
+      end
 
       nil
     end
