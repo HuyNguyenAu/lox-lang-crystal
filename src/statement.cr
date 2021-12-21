@@ -139,21 +139,21 @@ module Lox
       end
     end
 
-    # class WhileStatement < Statement
-    #   def initialize(@condition : Expression, @body : Statement)
-    #   end
+    class While < Statement
+      def initialize(@condition : Lox::Expression, @body : Statement)
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
+      def accept(visitor)
+        visitor.visit_while_statement(self)
+      end
 
-    #   def condition
-    #     @condition
-    #   end
+      def condition
+        @condition
+      end
 
-    #   def body
-    #     @body
-    #   end
-    # end
+      def body
+        @body
+      end
+    end
   end
 end

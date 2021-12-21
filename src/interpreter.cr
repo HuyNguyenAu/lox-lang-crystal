@@ -181,6 +181,17 @@ module Lox
       nil
     end
 
+    # A while loop continues to execute the statement body as long as the
+    # statement condition is true. But it evaulates the condition before
+    # the body is executed.
+    def visit_while_statement(statement : Statement::While)
+      while is_truthy(evaluate(statement.condition))
+        execute(statement.body)
+      end
+
+      nil
+    end
+
     # Check if the operand is a Float64, otherwise raise a Runtime Exception.
     private def check_number_operand(operator : Token, operand)
       check = operand.is_a?(Float64)
