@@ -24,16 +24,19 @@ module Lox
     # printStmt      → "print" expression ";" ;
     # varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
 
+    # A quick hack to handle unexpected tokens without handling Nil with Expressions.
+    @@error = false
+
     def initialize(@tokens : Array(Token), @current : Int32 = 0)
     end
 
     # Parse a series of statements until the end.
     def parse : Array(Statement)
-      statements = Array(Statement).new()
+      statements = Array(Statement).new
 
       while !is_at_end()
         decl = declaration()
-        statements << decl unless decl.nil?
+        statements << decl.as(Statement) unless decl.nil?
       end
 
       statements
@@ -45,11 +48,11 @@ module Lox
       if match(TokenType::PRINT)
         return print_statement()
       end
-      
+
       if match(TokenType::LEFT_BRACE)
         return Statement::Block.new(block_statement())
       end
-      
+
       expression_statement()
     end
 
@@ -57,6 +60,11 @@ module Lox
     private def print_statement : Statement
       # puts "print_statement"
       value = expression()
+
+      if value.is_a?(Expression::UnexpectedError)
+        raise error(peek(), "Expect ';' after value.")
+      end
+
       consume(TokenType::SEMICOLON, "Expect ';' after value.")
       Statement::Print.new(value)
     end
@@ -83,15 +91,15 @@ module Lox
     end
 
     # Rule: block → "{" declaration* "}" ;
-    def block_statement() : Array(Statement)
-      statements = Array(Statement).new()
+    def block_statement : Array(Statement)
+      statements = Array(Statement).new
 
       while !check(TokenType::RIGHT_BRACE) && !is_at_end()
         decl = declaration()
         statements << decl unless decl.nil?
       end
 
-      consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
+      consume(TokenType::RIGHT_BRACE, "Expect '}' after block.")
       statements
     end
 
@@ -118,23 +126,24 @@ module Lox
     end
 
     # Rule: assignment → IDENTIFIER "=" assignment | equality ;
-    private def assignment() : Expression
+    private def assignment : Expression
       # puts "assigment"
-      expr = equality()
+      
+      expression = equality()
 
       if match(TokenType::EQUAL)
         equals = previous()
         value = assignment()
 
-        if expr.is_a?(Expression::Variable)
-          name = (expr.as(Expression::Variable)).name()
+        if expression.is_a?(Expression::Variable)
+          name = expression.as(Expression::Variable).name
           return Expression::Assign.new(name, value)
         end
-
+        
         error(equals, "Invalid assignment target.")
       end
 
-      expr
+      expression
     end
 
     # Rule: equality → comparison ( ( "!=" | "==" ) comparison )* ;
@@ -199,7 +208,7 @@ module Lox
       if match(TokenType::BANG, TokenType::MINUS)
         operator = previous()
         right = unary()
-        Expression::Unary.new(operator, right)
+        return Expression::Unary.new(operator, right)
       end
 
       primary()
@@ -208,6 +217,7 @@ module Lox
     # Rule: primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER;
     private def primary : Expression
       # puts "primary"
+
       if match(TokenType::FALSE)
         return Expression::Literal.new(false)
       end
@@ -234,7 +244,8 @@ module Lox
         return Expression::Grouping.new(expression)
       end
 
-      raise "Unexpected token '#{peek().lexeme}'!"
+      @@error = true
+      Expression::UnexpectedError.new(peek().lexeme)
     end
 
     # Check if the current token has any of the given types.
@@ -296,11 +307,11 @@ module Lox
     end
 
     # Report a parse error.
-    private def error(token : Token, message : String) : ParseException
+    private def error(token : Token, message : String)
       # Not sure if this will call a static function with
       # the same state and behaviour as in Java or C#.
       Program.error(token, message)
-      ParseException.new()
+      ParseException.new
     end
 
     # When we raise a parse error, we might be still in the statement that
