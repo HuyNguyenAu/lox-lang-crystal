@@ -7,7 +7,9 @@ module Lox
   class Parser
     # Expression grammar:
     # expression     → assigment ;
-    # assignment     → IDENTIFIER "=" assignment | equality ;
+    # assignment     → IDENTIFIER "=" assignment | logic_or ;
+    # logic_or       → logic_and ( "or" logic_and )* ;
+    # logic_and      → equality ( "and" equality )* ;
     # equality       → comparison ( ( "!=" | "==" ) comparison )* ;
     # comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
     # term           → factor ( ( "-" | "+" ) factor )* ;
@@ -142,11 +144,11 @@ module Lox
       assignment()
     end
 
-    # Rule: assignment → IDENTIFIER "=" assignment | equality ;
+    # Rule: assignment → IDENTIFIER "=" assignment | logic_or ;
     private def assignment : Expression
       # puts "assigment"
 
-      expression = equality()
+      expression = or()
 
       if match(TokenType::EQUAL)
         equals = previous()
@@ -158,6 +160,34 @@ module Lox
         end
 
         error(equals, "Invalid assignment target.")
+      end
+
+      expression
+    end
+
+    # Rule: logic_or → logic_and ( "or" logic_and )* ;
+    private def or : Expression
+      expression = and()
+
+      while match(TokenType::OR)
+        operator = previous()
+        right = and()
+
+        expression = Expression::Logical.new(expression, operator, right)
+      end
+
+      expression
+    end
+
+    # Rule: logic_and → equality ( "and" equality )* ;
+    private def and : Expression
+      expression = equality()
+
+      while match(TokenType::AND)
+        operator = previous()
+        right = equality()
+
+        expression = Expression::Logical.new(expression, operator, right)
       end
 
       expression

@@ -88,6 +88,20 @@ module Lox
       expression.value
     end
 
+    # Evaluate the left operand first to see if we can short-circuit.
+    # If not, and only then,  can we evaluate the right operand.
+    def visit_logical_expression(expression : Expression)
+      left = evaluate(expression.left)
+
+      if expression.operator.type == TokenType::OR
+        return left unless !is_truthy(left)
+      else
+        return left unless is_truthy(left)
+      end
+    
+      evaluate(expression.right)
+    end
+
     # A unary an expression with a preceding '-' or '!'.
     def visit_unary_expression(expression : Expression)
       right = evaluate(expression.right)
@@ -131,7 +145,7 @@ module Lox
     # An else branch statement is optional.
     def visit_if_statement(statement : Statement::If)
       execute(statement.then_branch) unless !is_truthy(evaluate(statement.condition))
-      
+
       else_branch = statement.else_branch
       execute(else_branch) unless else_branch.nil?
 

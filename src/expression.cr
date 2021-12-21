@@ -104,26 +104,26 @@ module Lox
       end
     end
 
-    # class LogicalExpression < Expression
-    #   def initialize(@left : Expression, @operator : Token, @right : Expression)
-    #   end
+    class Logical < Expression
+      def initialize(@left : Expression, @operator : Token, @right : Expression)
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
+      def accept(visitor)
+        visitor.visit_logical_expression(self)
+      end
 
-    #   def left
-    #     @left
-    #   end
+      def left
+        @left
+      end
 
-    #   def operator
-    #     @operator
-    #   end
+      def operator
+        @operator
+      end
 
-    #   def right
-    #     @right
-    #   end
-    # end
+      def right
+        @right
+      end
+    end
 
     # class SetsExpression < Expression
     #   def initialize(@object : Expression, @name : Token, @value : Expression)
