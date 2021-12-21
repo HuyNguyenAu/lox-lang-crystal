@@ -99,7 +99,7 @@ module Lox
         check_number_operand(expression.operator, right)
         # Here we're meant to use double, but
         # Float64 is the same as double.
-        return right.as(Float64)
+        return -right.as(Float64)
       end
 
       # Unreachable.
@@ -131,7 +131,16 @@ module Lox
     # statement expression evaluates to.
     def visit_print_statement(statement : Statement)
       value = evaluate(statement.expression)
-      puts "#{stringify(value)}"
+      output = stringify(value)
+      
+      # Handle edge case where we need to show '-0' as '-0', not '0'.
+      if statement.expression.is_a?(Expression::Unary) && value == 0
+        puts "-#{output}"
+      else
+        puts output
+      end
+
+      
 
       nil
     end
