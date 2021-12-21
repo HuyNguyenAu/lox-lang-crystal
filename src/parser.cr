@@ -21,8 +21,9 @@ module Lox
     # program        → declaration* EOF ;
     # declaration    → varDecl | statement ;
     # varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
-    # statement      → exprStmt | ifStmt | printStmt | whileStmt | block ;
+    # statement      → exprStmt | forStmt | ifStmt | printStmt | whileStmt | block ;
     # exprStmt       → expression ";" ;
+    # forStmt        → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
     # ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
     # whileStmt      → "while" "(" expression ")" statement ;
     # printStmt      → "print" expression ";" ;
@@ -43,11 +44,15 @@ module Lox
       statements
     end
 
-    # Rule: statement → exprStmt ifStmt | printStmt | whileStmt | block ;
+    # Rule: statement → exprStmt | forStmt | ifStmt | printStmt | whileStmt | block ;
     private def statement : Statement
       # puts "statement"
       if match(TokenType::IF)
         return if_statement()
+      end
+
+      if match(TokenType::FOR)
+        return for_statement()
       end
 
       if match(TokenType::PRINT)
@@ -84,6 +89,57 @@ module Lox
       Statement::If.new(condition, then_branch, else_branch)
     end
 
+    # Rule: forStmt → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+    private def for_statement : Statement
+      consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.")
+
+      initialiser = nil
+
+      if match(TokenType::SEMICOLON)
+        initialiser = nil
+      elsif match(TokenType::VAR)
+        initialiser = var_declaration()
+      else
+        initialiser = expression_statement()
+      end
+
+      condition = nil
+
+      if !check(TokenType::SEMICOLON)
+        condition = expression()
+      end
+
+      consume(TokenType::SEMICOLON, "Expect ';' after loop condition.")
+
+      increment = nil
+
+      if !check(TokenType::RIGHT_PAREN)
+        increment = expression()
+      end
+
+      consume(TokenType::RIGHT_PAREN, "Expect ')' after for clauses.")
+
+      body = statement()
+
+      if !increment.nil?
+        statements = [body, Statement::Expression.new(increment)]
+        body = Statement::Block.new(statements)
+      end
+
+      if condition.nil?
+        condition = Expression::Literal.new(true)
+      end
+
+      body = Statement::While.new(condition, body)
+
+      if !initialiser.nil?
+        statements = [initialiser, body]
+        body = Statement::Block.new(statements)
+      end
+
+      body
+    end
+
     # Rule: printStmt → "print" expression ";" ;
     private def print_statement : Statement
       # puts "print_statement"
@@ -109,9 +165,9 @@ module Lox
     # Rule: whileStmt → "while" "(" expression ")" statement ;
     private def while_statement : Statement
       consume(TokenType::LEFT_PAREN, "Expect '(' after 'while'.")
-      
+
       condition = expression()
-      
+
       consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.")
 
       body = statement()
