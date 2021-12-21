@@ -118,6 +118,9 @@ with open('test_results.txt', 'w') as file:
         with Popen([custom_interpreter, test], stdin=PIPE, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as training:
             training_output, _ = training.communicate()
 
+        validation_output = validation_output.strip()
+        training_output = training_output.strip()
+        
         if validation_output == None:
             validation_output = ''
 
