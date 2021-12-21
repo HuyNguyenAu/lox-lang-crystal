@@ -21,9 +21,10 @@ module Lox
     # program        → declaration* EOF ;
     # declaration    → varDecl | statement ;
     # varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
-    # statement      → exprStmt | ifStmt | printStmt | block ;
+    # statement      → exprStmt | ifStmt | printStmt | whileStmt | block ;
     # exprStmt       → expression ";" ;
     # ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
+    # whileStmt      → "while" "(" expression ")" statement ;
     # printStmt      → "print" expression ";" ;
     # block          → "{" declaration* "}" ;
 
@@ -42,7 +43,7 @@ module Lox
       statements
     end
 
-    # Rule: statement → exprStmt | printStmt ;
+    # Rule: statement → exprStmt ifStmt | printStmt | whileStmt | block ;
     private def statement : Statement
       # puts "statement"
       if match(TokenType::IF)
@@ -51,6 +52,10 @@ module Lox
 
       if match(TokenType::PRINT)
         return print_statement()
+      end
+
+      if match(TokenType::WHILE)
+        return while_statement()
       end
 
       if match(TokenType::LEFT_BRACE)
@@ -99,6 +104,19 @@ module Lox
 
       consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.")
       Statement::Variable.new(name, initialiser)
+    end
+
+    # Rule: whileStmt → "while" "(" expression ")" statement ;
+    private def while_statement : Statement
+      consume(TokenType::LEFT_PAREN, "Expect '(' after 'while'.")
+      
+      condition = expression()
+      
+      consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.")
+
+      body = statement()
+
+      Statement::While.new(condition, body)
     end
 
     # Rule: exprStmt → expression ";" ;
