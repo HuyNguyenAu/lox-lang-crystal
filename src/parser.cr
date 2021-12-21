@@ -7,7 +7,9 @@ module Lox
   class Parser
     # Expression grammar:
     # expression     → assigment ;
-    # assignment     → IDENTIFIER "=" assignment | equality ;
+    # assignment     → IDENTIFIER "=" assignment | logic_or ;
+    # logic_or       → logic_and ( "or" logic_and )* ;
+    # logic_and      → equality ( "and" equality )* ;
     # equality       → comparison ( ( "!=" | "==" ) comparison )* ;
     # comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
     # term           → factor ( ( "-" | "+" ) factor )* ;
@@ -18,11 +20,12 @@ module Lox
     # Parser grammar:
     # program        → declaration* EOF ;
     # declaration    → varDecl | statement ;
-    # statement      → exprStmt | printStmt | block ;
-    # block          → "{" declaration* "}" ;
-    # exprStmt       → expression ";" ;
-    # printStmt      → "print" expression ";" ;
     # varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
+    # statement      → exprStmt | ifStmt | printStmt | block ;
+    # exprStmt       → expression ";" ;
+    # ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
+    # printStmt      → "print" expression ";" ;
+    # block          → "{" declaration* "}" ;
 
     def initialize(@tokens : Array(Token), @current : Int32 = 0)
     end
@@ -42,6 +45,10 @@ module Lox
     # Rule: statement → exprStmt | printStmt ;
     private def statement : Statement
       # puts "statement"
+      if match(TokenType::IF)
+        return if_statement()
+      end
+
       if match(TokenType::PRINT)
         return print_statement()
       end
@@ -51,6 +58,25 @@ module Lox
       end
 
       expression_statement()
+    end
+
+    # Rule: ifStmt → "if" "(" expression ")" statement ( "else" statement )? ;
+    private def if_statement : Statement
+      # puts "if_statement"
+      consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.")
+
+      condition = expression()
+
+      consume(TokenType::RIGHT_PAREN, "Expect ')' after if condition.")
+
+      then_branch = statement()
+      else_branch = nil
+
+      if match(TokenType::ELSE)
+        else_branch = statement()
+      end
+
+      Statement::If.new(condition, then_branch, else_branch)
     end
 
     # Rule: printStmt → "print" expression ";" ;
@@ -118,11 +144,11 @@ module Lox
       assignment()
     end
 
-    # Rule: assignment → IDENTIFIER "=" assignment | equality ;
+    # Rule: assignment → IDENTIFIER "=" assignment | logic_or ;
     private def assignment : Expression
       # puts "assigment"
-      
-      expression = equality()
+
+      expression = or()
 
       if match(TokenType::EQUAL)
         equals = previous()
@@ -132,8 +158,36 @@ module Lox
           name = expression.as(Expression::Variable).name
           return Expression::Assign.new(name, value)
         end
-        
+
         error(equals, "Invalid assignment target.")
+      end
+
+      expression
+    end
+
+    # Rule: logic_or → logic_and ( "or" logic_and )* ;
+    private def or : Expression
+      expression = and()
+
+      while match(TokenType::OR)
+        operator = previous()
+        right = and()
+
+        expression = Expression::Logical.new(expression, operator, right)
+      end
+
+      expression
+    end
+
+    # Rule: logic_and → equality ( "and" equality )* ;
+    private def and : Expression
+      expression = equality()
+
+      while match(TokenType::AND)
+        operator = previous()
+        right = equality()
+
+        expression = Expression::Logical.new(expression, operator, right)
       end
 
       expression

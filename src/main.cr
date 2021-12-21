@@ -3,7 +3,6 @@ require "../src/parser.cr"
 require "../src/expression.cr"
 require "../src/runtime-exception.cr"
 require "../src/interpreter.cr"
-require "../src/ast_printer.cr"
 
 module Lox
   class Program
