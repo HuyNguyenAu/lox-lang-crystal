@@ -25,7 +25,7 @@ module Lox
     # declarations wrapped in curly braces.
     def visit_block_statement(statement : Statement::Block)
       execute_block(statement.statements, Environment.new(@environment))
-      nil      
+      nil
     end
 
     # A binary expression evaluates to a value.
@@ -127,12 +127,23 @@ module Lox
       nil
     end
 
+    # An if statment contains a must always contain a then branch statement.
+    # An else branch statement is optional.
+    def visit_if_statement(statement : Statement::If)
+      execute(statement.then_branch) unless !is_truthy(evaluate(statement.condition))
+      
+      else_branch = statement.else_branch
+      execute(else_branch) unless else_branch.nil?
+
+      nil
+    end
+
     # A print statement returns no value and only needs to print what the
     # statement expression evaluates to.
     def visit_print_statement(statement : Statement)
       value = evaluate(statement.expression)
       output = stringify(value)
-      
+
       # Handle edge case where we need to show '-0' as '-0', not '0'.
       if statement.expression.is_a?(Expression::Unary) && value == 0
         puts "-#{output}"
@@ -152,7 +163,7 @@ module Lox
       end
 
       @environment.define(statement.name.lexeme, value)
-      
+
       nil
     end
 
@@ -245,7 +256,7 @@ module Lox
     # Then restore the environment previously.
     def execute_block(statements : Array(Statement), environment : Environment)
       previous : Environment = @environment
-      
+
       begin
         @environment = environment
 

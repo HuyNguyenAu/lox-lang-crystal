@@ -71,26 +71,26 @@ module Lox
     #   end
     # end
 
-    # class IfStatement < Statement
-    #   def initialize(@condition : Expression, then_branch : Statement, else_branch : Statement)
-    #   end
+    class If < Statement
+      def initialize(@condition : Lox::Expression, @then_branch : Statement, @else_branch : Statement | Nil)
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
+      def accept(visitor)
+        visitor.visit_if_statement(self)
+      end
 
-    #   def condition
-    #     @condition
-    #   end
+      def condition
+        @condition
+      end
 
-    #   def then_branch
-    #     @then_branch
-    #   end
+      def then_branch
+        @then_branch
+      end
 
-    #   def else_branch
-    #     @else_branch
-    #   end
-    # end
+      def else_branch
+        @else_branch
+      end
+    end
 
     class Print < Statement
       def initialize(@expression : Lox::Expression)

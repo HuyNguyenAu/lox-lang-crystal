@@ -18,11 +18,12 @@ module Lox
     # Parser grammar:
     # program        → declaration* EOF ;
     # declaration    → varDecl | statement ;
-    # statement      → exprStmt | printStmt | block ;
-    # block          → "{" declaration* "}" ;
-    # exprStmt       → expression ";" ;
-    # printStmt      → "print" expression ";" ;
     # varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
+    # statement      → exprStmt | ifStmt | printStmt | block ;
+    # exprStmt       → expression ";" ;
+    # ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
+    # printStmt      → "print" expression ";" ;
+    # block          → "{" declaration* "}" ;
 
     def initialize(@tokens : Array(Token), @current : Int32 = 0)
     end
@@ -42,6 +43,10 @@ module Lox
     # Rule: statement → exprStmt | printStmt ;
     private def statement : Statement
       # puts "statement"
+      if match(TokenType::IF)
+        return if_statement()
+      end
+
       if match(TokenType::PRINT)
         return print_statement()
       end
@@ -51,6 +56,25 @@ module Lox
       end
 
       expression_statement()
+    end
+
+    # Rule: ifStmt → "if" "(" expression ")" statement ( "else" statement )? ;
+    private def if_statement : Statement
+      # puts "if_statement"
+      consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.")
+
+      condition = expression()
+
+      consume(TokenType::RIGHT_PAREN, "Expect ')' after if condition.")
+
+      then_branch = statement()
+      else_branch = nil
+
+      if match(TokenType::ELSE)
+        else_branch = statement()
+      end
+
+      Statement::If.new(condition, then_branch, else_branch)
     end
 
     # Rule: printStmt → "print" expression ";" ;
@@ -121,7 +145,7 @@ module Lox
     # Rule: assignment → IDENTIFIER "=" assignment | equality ;
     private def assignment : Expression
       # puts "assigment"
-      
+
       expression = equality()
 
       if match(TokenType::EQUAL)
@@ -132,7 +156,7 @@ module Lox
           name = expression.as(Expression::Variable).name
           return Expression::Assign.new(name, value)
         end
-        
+
         error(equals, "Invalid assignment target.")
       end
 
