@@ -181,18 +181,5 @@ module Lox
         @name
       end
     end
-    
-    class UnexpectedError < Expression
-      def initialize(@token : String)
-      end
-
-      def accept(visitor)
-        # visitor.visit_unexpected_error_expression(self)
-      end
-
-      def token
-        @token
-      end
-    end
   end
 end

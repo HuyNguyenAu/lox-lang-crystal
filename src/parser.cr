@@ -24,9 +24,6 @@ module Lox
     # printStmt      → "print" expression ";" ;
     # varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
 
-    # A quick hack to handle unexpected tokens without handling Nil with Expressions.
-    @@error = false
-
     def initialize(@tokens : Array(Token), @current : Int32 = 0)
     end
 
@@ -60,10 +57,6 @@ module Lox
     private def print_statement : Statement
       # puts "print_statement"
       value = expression()
-
-      if value.is_a?(Expression::UnexpectedError)
-        raise error(peek(), "Expect ';' after value.")
-      end
 
       consume(TokenType::SEMICOLON, "Expect ';' after value.")
       Statement::Print.new(value)
@@ -244,8 +237,7 @@ module Lox
         return Expression::Grouping.new(expression)
       end
 
-      @@error = true
-      Expression::UnexpectedError.new(peek().lexeme)
+      raise error(peek(), "Expect expression.")
     end
 
     # Check if the current token has any of the given types.
