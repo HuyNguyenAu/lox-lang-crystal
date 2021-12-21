@@ -8,7 +8,7 @@ require "./statement.cr"
 
 module Lox
   class Interpreter
-    @enviroment = Environment.new
+    @environment = Environment.new
 
     # Go through all statements and evaluate it.
     def interpret(statements : Array(Statement))
@@ -19,6 +19,13 @@ module Lox
       rescue error : RuntimeException
         Program.runtime_error(error)
       end
+    end
+
+    # A block statement contains a series of statements (might be empty) or
+    # declarations wrapped in curly braces.
+    def visit_block_statement(statement : Statement::Block)
+      execute_block(statement.statements, Environment.new(@environment))
+      nil      
     end
 
     # A binary expression evaluates to a value.
@@ -87,28 +94,29 @@ module Lox
 
       case expression.operator.type
       when TokenType::BANG
-        return is_truthy(right)
+        return !is_truthy(right)
       when TokenType::MINUS
         check_number_operand(expression.operator, right)
         # Here we're meant to use double, but
         # Float64 is the same as double.
-        return right.as(Float64)
+        return -right.as(Float64)
       end
 
       # Unreachable.
       nil
     end
 
-    # Forward the work to the enviroment which makes sure the
+    # Forward the work to the environment which makes sure the
     # variable is defined.
     def visit_variable_expression(expression : Expression::Variable)
-      return @enviroment.get(expression.name)
+      return @environment.get(expression.name)
     end
 
-    #
+    # Evaluate the right hand side to get the value, then
+    # store it in the named variable.
     def visit_assign_expression(expression : Expression::Assign)
       value = evaluate(expression.value)
-      @enviroment.assign(expression.name, value)
+      @environment.assign(expression.name, value)
       value
     end
 
@@ -123,12 +131,19 @@ module Lox
     # statement expression evaluates to.
     def visit_print_statement(statement : Statement)
       value = evaluate(statement.expression)
-      puts "#{stringify(value)}"
+      output = stringify(value)
+      
+      # Handle edge case where we need to show '-0' as '-0', not '0'.
+      if statement.expression.is_a?(Expression::Unary) && value == 0
+        puts "-#{output}"
+      else
+        puts output
+      end
 
       nil
     end
 
-    # When we encounter a variable statement we need to store it in out current enviroment.
+    # When we encounter a variable statement we need to store it in out current environment.
     def visit_variable_statement(statement : Statement)
       value = nil
 
@@ -136,7 +151,7 @@ module Lox
         value = evaluate(statement.initialiser.as(Expression))
       end
 
-      @enviroment.define(statement.name.lexeme, value)
+      @environment.define(statement.name.lexeme, value)
       
       nil
     end
@@ -161,7 +176,7 @@ module Lox
         return
       end
 
-      raise RuntimeException.new(operator, "Operands must be a number.")
+      raise RuntimeException.new(operator, "Operands must be numbers.")
     end
 
     # Convert an object to bool. Nils are false.
@@ -224,6 +239,22 @@ module Lox
     # the interpreter's visitor implementation for statements.
     private def execute(statement : Statement)
       statement.accept(self)
+    end
+
+    # Execute a list of statements of a given environment (scope).
+    # Then restore the environment previously.
+    def execute_block(statements : Array(Statement), environment : Environment)
+      previous : Environment = @environment
+      
+      begin
+        @environment = environment
+
+        statements.each do |statement|
+          execute(statement)
+        end
+      ensure
+        @environment = previous
+      end
     end
   end
 end

@@ -1,6 +1,9 @@
 /docs/
 /lib/
 /bin/
+/.vscode/
 /.shards/
 *.dwarf
 *.lox
+*.txt
+env

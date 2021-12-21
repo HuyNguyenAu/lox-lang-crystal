@@ -3,18 +3,18 @@ require "../src/token.cr"
 # Basic Visitor pattern was adapted from https://github.com/crystal-community/crystal-patterns/blob/master/behavioral/visitor.cr.
 module Lox
   abstract class Statement
-    # class Block < Statement
-    #   def initialize(@statements : Array(Statement))
-    #   end
+    class Block < Statement
+      def initialize(@statements : Array(Statement))
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
+      def accept(visitor)
+        visitor.visit_block_statement(self)
+      end
 
-    #   def statements
-    #     @statements
-    #   end
-    # end
+      def statements
+        @statements
+      end
+    end
 
     # class Class < Statement
     #   def initialize(@name : Token, superclass : Variable, methods : Array(Function))
