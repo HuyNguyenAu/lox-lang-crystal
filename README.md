@@ -5,4 +5,4 @@ This is a an implementation of [Crafting Interpreters](https://craftinginterpret
 - Crystal 1.2.2
 
 ## Why
-For some reason, I thought this would be a a could idea to learn Crystal.
+For some reason, I thought this would be a good idea to learn Crystal.
