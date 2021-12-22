@@ -50,26 +50,26 @@ module Lox
       end
     end
 
-    # class FunctionStatement < Statement
-    #   def initialize(@name : Token, params : Array(Token), body : Array(Statement))
-    #   end
+    class Function < Statement
+      def initialize(@name : Token, @params : Array(Token), @body : Array(Statement))
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
+      def accept(visitor)
+        visitor.visit_function_statement(self)
+      end
 
-    #   def name
-    #     @name
-    #   end
+      def name
+        @name
+      end
 
-    #   def params
-    #     @params
-    #   end
+      def params
+        @params
+      end
 
-    #   def body
-    #     @body
-    #   end
-    # end
+      def body
+        @body
+      end
+    end
 
     class If < Statement
       def initialize(@condition : Lox::Expression, @then_branch : Statement, @else_branch : Statement | Nil)

@@ -15,7 +15,7 @@ module Lox
       
       # The current enviroment.
       @environment = @globals
-      
+
       @globals.define("clock", Callable::Clock.new)
     end
 

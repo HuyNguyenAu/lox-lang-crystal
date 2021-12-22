@@ -21,7 +21,10 @@ module Lox
 
     # Parser grammar:
     # program        → declaration* EOF ;
-    # declaration    → varDecl | statement ;
+    # declaration    → funDecl | varDecl | statement ;
+    # funDecl        → "fun" function ;
+    # function       → IDENTIFIER "(" parameters? ")" block ;
+    # parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
     # varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
     # statement      → exprStmt | forStmt | ifStmt | printStmt | whileStmt | block ;
     # exprStmt       → expression ";" ;
@@ -36,7 +39,7 @@ module Lox
 
     # Parse a series of statements until the end.
     def parse : Array(Statement)
-      statements = Array(Statement).new()
+      statements = Array(Statement).new
 
       while is_at_end()
         decl = declaration()
@@ -151,6 +154,37 @@ module Lox
       Statement::Print.new(value)
     end
 
+    # Rule: # funDecl → "fun" function ;
+    private def function_declaration
+    end
+
+    # Rule: function → IDENTIFIER "(" parameters? ")" block ;
+    private def function(kind : String) : Statement
+      name = consume(TokenType::IDENTIFIER, "Expect #{kind} name.")
+
+      consume(TokenType::LEFT_PAREN, "Expect '(' after #{kind} name.")
+
+      parameters = Array(Token).new
+
+      unless check(TokenType::RIGHT_PAREN)
+        loop do
+          if parameters.size >= 255
+            error(peek(), "Can't have more than 255 parameters.")
+          end
+
+          parameters << consume(TokenType::IDENTIFIER, "Expect parameter name.")
+
+          break unless match(TokenType::COMMA)
+        end
+      end
+
+      consume(TokenType::RIGHT_PAREN, "Expect ')' before #{kind} body.")
+
+      body = block()
+
+      Statement::Function(name, parameters, body).new()
+    end
+
     # Rule: varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
     private def var_declaration : Statement
       # puts "var_declaration"
@@ -187,7 +221,7 @@ module Lox
 
     # Rule: block → "{" declaration* "}" ;
     def block_statement : Array(Statement)
-      statements = Array(Statement).new()
+      statements = Array(Statement).new
 
       while !check(TokenType::RIGHT_BRACE) && !is_at_end()
         decl = declaration()
@@ -198,10 +232,14 @@ module Lox
       statements
     end
 
-    # Rule: declaration → varDecl | statement ;
+    # Rule: declaration → funDecl | varDecl | statement ;
     private def declaration : Statement | Nil
       # puts "declaration"
       begin
+        if match(TokenType::FUN)
+          return function("function")
+        end
+
         if match(TokenType::VAR)
           return var_declaration()
         end
@@ -351,16 +389,16 @@ module Lox
 
       expression
     end
-    
+
     # Parse the arguments of the call expression and
     # wrap the callee and arguments together into an
     # AST node.
     private def finish_call(callee : Expression)
-      arguments = Array(Expression).new()
+      arguments = Array(Expression).new
 
       unless check(TokenType::RIGHT_PAREN)
         loop do
-          if arguments.size() >= 255
+          if arguments.size >= 255
             error(peek(), "Can't have more than 255 arguments.")
           end
 
@@ -471,7 +509,7 @@ module Lox
       # Not sure if this will call a static function with
       # the same state and behaviour as in Java or C#.
       Program.error(token, message)
-      ParseException.new()
+      ParseException.new
     end
 
     # When we raise a parse error, we might be still in the statement that
