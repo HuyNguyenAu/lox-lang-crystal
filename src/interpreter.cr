@@ -5,10 +5,19 @@ require "./token-type.cr"
 require "./runtime-exception.cr"
 require "./environment.cr"
 require "./statement.cr"
+require "./callable.cr"
 
 module Lox
   class Interpreter
-    @environment = Environment.new
+    def initialize
+      # Reference to the outermost global enviroment.
+      @globals = Environment.new
+      
+      # The current enviroment.
+      @environment = @globals
+      
+      @globals.define("clock", Callable::Clock.new)
+    end
 
     # Go through all statements and evaluate it.
     def interpret(statements : Array(Statement))
@@ -76,6 +85,29 @@ module Lox
       nil
     end
 
+    # Evaluate the expression for the callee and its arguments expressions and store
+    # the results in a list. Invoke the call method with the results of the arguments.
+    def visit_call_expression(expression : Expression)
+      callee = evaluate(expression.callee)
+      arguments = Array(Bool | Nil | Float64 | String).new
+
+      expression.arguments.each() do |argument|
+        arguments << evaluate(argument)
+      end
+
+      unless callee.is_a?(Callable)
+        raise RuntimeException.new(expression.paren, "Can only call functions and classes.")
+      end
+
+      function = callee.as(Callable)
+
+      if arguments.size != function.arity
+        raise RuntimeException.new(expression.paren, "Expected #{function.arity}  arguments but got #{arguments.size}.")
+      end
+
+      function.call(self, arguments)
+    end
+
     # A grouping node contains a node which can be
     # recursively deep. We need to go into the expression
     # and evaluate the inner expression.
@@ -98,7 +130,7 @@ module Lox
       else
         return left unless is_truthy(left)
       end
-    
+
       evaluate(expression.right)
     end
 

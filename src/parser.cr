@@ -14,7 +14,9 @@ module Lox
     # comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
     # term           → factor ( ( "-" | "+" ) factor )* ;
     # factor         → unary ( ( "/" | "*" ) unary )* ;
-    # unary          → ( "!" | "-" ) unary | primary ;
+    # unary          → ( "!" | "-" ) unary | call ;
+    # call           → primary ( "(" arguments? ")" )* ;
+    # arguments      → expression ( "," expression )* ;
     # primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
 
     # Parser grammar:
@@ -34,9 +36,9 @@ module Lox
 
     # Parse a series of statements until the end.
     def parse : Array(Statement)
-      statements = Array(Statement).new
+      statements = Array(Statement).new()
 
-      while !is_at_end()
+      while is_at_end()
         decl = declaration()
         statements << decl.as(Statement) unless decl.nil?
       end
@@ -105,7 +107,7 @@ module Lox
 
       condition = nil
 
-      if !check(TokenType::SEMICOLON)
+      unless check(TokenType::SEMICOLON)
         condition = expression()
       end
 
@@ -113,7 +115,7 @@ module Lox
 
       increment = nil
 
-      if !check(TokenType::RIGHT_PAREN)
+      unless check(TokenType::RIGHT_PAREN)
         increment = expression()
       end
 
@@ -121,7 +123,7 @@ module Lox
 
       body = statement()
 
-      if !increment.nil?
+      unless increment.nil?
         statements = [body, Statement::Expression.new(increment)]
         body = Statement::Block.new(statements)
       end
@@ -132,7 +134,7 @@ module Lox
 
       body = Statement::While.new(condition, body)
 
-      if !initialiser.nil?
+      unless initialiser.nil?
         statements = [initialiser, body]
         body = Statement::Block.new(statements)
       end
@@ -185,7 +187,7 @@ module Lox
 
     # Rule: block → "{" declaration* "}" ;
     def block_statement : Array(Statement)
-      statements = Array(Statement).new
+      statements = Array(Statement).new()
 
       while !check(TokenType::RIGHT_BRACE) && !is_at_end()
         decl = declaration()
@@ -323,7 +325,7 @@ module Lox
       expression
     end
 
-    # Rule: unary → ( "!" | "-" ) unary | primary ;
+    # Rule: unary → ( "!" | "-" ) unary | call ;
     private def unary : Expression
       # puts "unary"
       if match(TokenType::BANG, TokenType::MINUS)
@@ -332,7 +334,45 @@ module Lox
         return Expression::Unary.new(operator, right)
       end
 
-      primary()
+      call()
+    end
+
+    # Rule: call → primary ( "(" arguments? ")" )* ;
+    private def call
+      expression = primary()
+
+      while true
+        if match(TokenType::LEFT_PAREN)
+          expression = finish_call(expression)
+        else
+          break
+        end
+      end
+
+      expression
+    end
+    
+    # Parse the arguments of the call expression and
+    # wrap the callee and arguments together into an
+    # AST node.
+    private def finish_call(callee : Expression)
+      arguments = Array(Expression).new()
+
+      unless check(TokenType::RIGHT_PAREN)
+        loop do
+          if arguments.size() >= 255
+            error(peek(), "Can't have more than 255 arguments.")
+          end
+
+          arguments << expression()
+
+          break unless match(TokenType::COMMA)
+        end
+      end
+
+      paren = consume(TokenType::RIGHT_PAREN, "Expect ')' after arguments.")
+
+      Expression::Call.new(callee, paren, arguments)
     end
 
     # Rule: primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER;
@@ -404,7 +444,7 @@ module Lox
 
     # Consume the current token and return it.
     private def advance : Token
-      if !is_at_end()
+      unless is_at_end()
         @current += 1
       end
 
@@ -431,7 +471,7 @@ module Lox
       # Not sure if this will call a static function with
       # the same state and behaviour as in Java or C#.
       Program.error(token, message)
-      ParseException.new
+      ParseException.new()
     end
 
     # When we raise a parse error, we might be still in the statement that

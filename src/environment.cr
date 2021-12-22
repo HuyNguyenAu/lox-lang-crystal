@@ -4,7 +4,7 @@ require "../src/runtime-exception.cr"
 module Lox
   class Environment
     @enclosing : Environment | Nil = nil
-    @values = Hash(String, Bool | Float64 | String | Nil).new
+    @values = Hash(String, Bool | Float64 | String | Nil).new()
 
     def initialize
     end
@@ -36,7 +36,7 @@ module Lox
         return
       end
 
-      if !@enclosing.nil?
+      unless @enclosing.nil?
         @enclosing.as(Environment).assign(name, value)
         return
       end
