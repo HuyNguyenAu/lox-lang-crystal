@@ -182,7 +182,7 @@ module Lox
 
       body = block()
 
-      Statement::Function(name, parameters, body).new()
+      Statement::Function.new(name, parameters, body)
     end
 
     # Rule: varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
