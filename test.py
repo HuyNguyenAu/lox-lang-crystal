@@ -79,17 +79,6 @@ chapters = {
         'test/block/scope.lox',
     ],
     'chap09_control': [
-        'test/benchmark/equality.lox',
-        'test/benchmark/binary_trees.lox',
-        'test/benchmark/properties.lox',
-        'test/benchmark/invocation.lox',
-        'test/benchmark/fib.lox',
-        'test/benchmark/trees.lox',
-        'test/benchmark/string_equality.lox',
-        'test/benchmark/instantiation.lox',
-        'test/benchmark/zoo_batch.lox',
-        'test/benchmark/method_call.lox',
-        'test/benchmark/zoo.lox',
         'test/closure/reuse_closure_slot.lox',
         'test/closure/assign_to_shadowed_later.lox',
         'test/closure/close_over_later_variable.lox',
@@ -376,6 +365,7 @@ with open('test_results.txt', 'w') as file:
 
     for i, test in enumerate(tests):
         print(f'Running test {i + 1} of {len(tests)} {test}... ', end='')
+        print(f'{crafting_interpreters_dir}/gen/{chapter}/{chapter}.jar')
 
         with Popen(
             ['java', '-jar', f'{crafting_interpreters_dir}/gen/{chapter}/{chapter}.jar', test], stdin=PIPE,
