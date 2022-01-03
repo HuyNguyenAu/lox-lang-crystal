@@ -2,6 +2,8 @@ require "../src/token.cr"
 
 module Lox
   abstract class Expression
+    abstract def accept(visitor)
+
     class Assign < Expression
       def initialize(@name : Token, @value : Expression)
       end

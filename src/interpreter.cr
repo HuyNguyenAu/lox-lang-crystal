@@ -10,13 +10,17 @@ require "./callable.cr"
 module Lox
   class Interpreter
     def initialize
-      # Reference to the outermost global enviroment.
+      # Reference to the outermost global environment.
       @globals = Environment.new
       
-      # The current enviroment.
+      # The current environment.
       @environment = @globals
 
-      @globals.define("clock", Callable::Clock.new)
+      @globals.define("clock", Callable::Clock.new())
+    end
+
+    def globals
+      @globals
     end
 
     # Go through all statements and evaluate it.
@@ -89,7 +93,7 @@ module Lox
     # the results in a list. Invoke the call method with the results of the arguments.
     def visit_call_expression(expression : Expression)
       callee = evaluate(expression.callee)
-      arguments = Array(Bool | Nil | Float64 | String).new
+      arguments = Array(Bool | Float64 | Callable | Expression | String | Nil).new()
 
       expression.arguments.each() do |argument|
         arguments << evaluate(argument)
@@ -170,6 +174,19 @@ module Lox
     # expression and then discard the result.
     def visit_expression_statement(statement : Statement)
       evaluate(statement.expression)
+      
+      nil
+    end
+
+    # Store the the function in the current environment with the current
+    # active environment when the function is declared, not when it's called.
+    # A declaration binds the resulting object to a new
+    # variable.
+    def visit_function_statement(statement : Statement::Function)
+      function = Callable::Function.new(statement, @environment)
+
+      @environment.define(statement.name.lexeme, function)
+
       nil
     end
 
@@ -200,6 +217,17 @@ module Lox
       end
 
       nil
+    end
+
+    # We use an exception to unwind the interpreter past the visit methods of all
+    # containg statements back to the code that started the executing body.
+    def visit_return_statement(statement : Statement)
+      statement_value = statement.value
+      
+      value = nil
+      value = evaluate(statement_value) unless statement_value.nil?
+
+      raise ReturnException.new(value)
     end
 
     # When we encounter a variable statement we need to store it in out current environment.

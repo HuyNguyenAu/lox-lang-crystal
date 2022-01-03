@@ -1,8 +1,11 @@
 require "../src/token.cr"
+require "../src/expression.cr"
 
 # Basic Visitor pattern was adapted from https://github.com/crystal-community/crystal-patterns/blob/master/behavioral/visitor.cr.
 module Lox
   abstract class Statement
+    abstract def accept(visitor)
+
     class Block < Statement
       def initialize(@statements : Array(Statement))
       end
@@ -51,7 +54,7 @@ module Lox
     end
 
     class Function < Statement
-      def initialize(@name : Token, @params : Array(Token), @body : Array(Statement))
+      def initialize(@name : Token, @parameters : Array(Token), @body : Array(Statement))
       end
 
       def accept(visitor)
@@ -62,8 +65,8 @@ module Lox
         @name
       end
 
-      def params
-        @params
+      def parameters
+        @parameters
       end
 
       def body
@@ -105,22 +108,22 @@ module Lox
       end
     end
 
-    # class ReturnStatement < Statement
-    #   def initialize(@keyword : Token, @value : Expression)
-    #   end
+    class Return < Statement
+      def initialize(@keyword : Token, @value : Lox::Expression | Nil)
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
+      def accept(visitor)
+        visitor.visit_return_statement(self)
+      end
 
-    #   def keyword
-    #     @keyword
-    #   end
+      def keyword
+        @keyword
+      end
 
-    #   def value
-    #     @value
-    #   end
-    # end
+      def value
+        @value
+      end
+    end
 
     class Variable < Statement
       def initialize(@name : Token, @initialiser : Lox::Expression | Nil)

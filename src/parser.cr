@@ -26,12 +26,13 @@ module Lox
     # function       → IDENTIFIER "(" parameters? ")" block ;
     # parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
     # varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
-    # statement      → exprStmt | forStmt | ifStmt | printStmt | whileStmt | block ;
+    # statement      → exprStmt | forStmt | ifStmt | printStmt | returnStmt | whileStmt | block ;
     # exprStmt       → expression ";" ;
     # forStmt        → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
     # ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
-    # whileStmt      → "while" "(" expression ")" statement ;
     # printStmt      → "print" expression ";" ;
+    # returnStmt     → "return" expression? ";" ;
+    # whileStmt      → "while" "(" expression ")" statement ;
     # block          → "{" declaration* "}" ;
 
     def initialize(@tokens : Array(Token), @current : Int32 = 0)
@@ -41,7 +42,7 @@ module Lox
     def parse : Array(Statement)
       statements = Array(Statement).new
 
-      while is_at_end()
+      while !is_at_end()
         decl = declaration()
         statements << decl.as(Statement) unless decl.nil?
       end
@@ -49,7 +50,7 @@ module Lox
       statements
     end
 
-    # Rule: statement → exprStmt | forStmt | ifStmt | printStmt | whileStmt | block ;
+    # Rule: statement → exprStmt | forStmt | ifStmt | printStmt | returnStmt | whileStmt | block ;
     private def statement : Statement
       # puts "statement"
       if match(TokenType::IF)
@@ -62,6 +63,10 @@ module Lox
 
       if match(TokenType::PRINT)
         return print_statement()
+      end
+
+      if match(TokenType::RETURN)
+        return return_statement()
       end
 
       if match(TokenType::WHILE)
@@ -151,24 +156,38 @@ module Lox
       value = expression()
 
       consume(TokenType::SEMICOLON, "Expect ';' after value.")
+      
       Statement::Print.new(value)
     end
 
-    # Rule: # funDecl → "fun" function ;
-    private def function_declaration
+    # Rule: returnStmt → "return" expression? ";" ;
+    private def return_statement : Statement
+      # puts "return_statement"
+      keyword = previous()
+      value = nil
+
+      unless check(TokenType::SEMICOLON)
+        value = expression()
+      end
+
+      consume(TokenType::SEMICOLON, "Expect ';' after return value.")
+
+      Statement::Return.new(keyword, value)
     end
 
     # Rule: function → IDENTIFIER "(" parameters? ")" block ;
     private def function(kind : String) : Statement
+      # puts "function_statement" 
+
       name = consume(TokenType::IDENTIFIER, "Expect #{kind} name.")
 
       consume(TokenType::LEFT_PAREN, "Expect '(' after #{kind} name.")
 
-      parameters = Array(Token).new
+      parameters = Array(Token).new()
 
       unless check(TokenType::RIGHT_PAREN)
         loop do
-          if parameters.size >= 255
+          if parameters.size() >= 255
             error(peek(), "Can't have more than 255 parameters.")
           end
 
@@ -178,9 +197,11 @@ module Lox
         end
       end
 
-      consume(TokenType::RIGHT_PAREN, "Expect ')' before #{kind} body.")
+      consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.")
+      
+      consume(TokenType::LEFT_BRACE, "Expect '{' before #{kind} body.")
 
-      body = block()
+      body = block_statement()
 
       Statement::Function.new(name, parameters, body)
     end
@@ -221,7 +242,7 @@ module Lox
 
     # Rule: block → "{" declaration* "}" ;
     def block_statement : Array(Statement)
-      statements = Array(Statement).new
+      statements = Array(Statement).new()
 
       while !check(TokenType::RIGHT_BRACE) && !is_at_end()
         decl = declaration()
@@ -229,6 +250,7 @@ module Lox
       end
 
       consume(TokenType::RIGHT_BRACE, "Expect '}' after block.")
+      
       statements
     end
 
@@ -394,9 +416,9 @@ module Lox
     # wrap the callee and arguments together into an
     # AST node.
     private def finish_call(callee : Expression)
-      arguments = Array(Expression).new
+      arguments = Array(Expression).new()
 
-      unless check(TokenType::RIGHT_PAREN)
+      if !check(TokenType::RIGHT_PAREN)
         loop do
           if arguments.size >= 255
             error(peek(), "Can't have more than 255 arguments.")
