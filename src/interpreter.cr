@@ -106,7 +106,7 @@ module Lox
       function = callee.as(Callable)
 
       if arguments.size != function.arity
-        raise RuntimeException.new(expression.paren, "Expected #{function.arity}  arguments but got #{arguments.size}.")
+        raise RuntimeException.new(expression.paren, "Expected #{function.arity} arguments but got #{arguments.size}.")
       end
 
       function.call(self, arguments)
