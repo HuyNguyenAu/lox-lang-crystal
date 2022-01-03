@@ -2,6 +2,8 @@ require "../src/token.cr"
 
 module Lox
   abstract class Expression
+    abstract def accept(visitor)
+
     class Assign < Expression
       def initialize(@name : Token, @value : Expression)
       end
@@ -40,26 +42,26 @@ module Lox
       end
     end
 
-    # class CallExpression < Expression
-    #   def initialize(@callee : Expression, @paren : Token, @arguments : Array(Expression))
-    #   end
+    class Call < Expression
+      def initialize(@callee : Expression, @paren : Token, @arguments : Array(Expression))
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
+      def accept(visitor)
+        visitor.visit_call_expression(self)
+      end
 
-    #   def callee
-    #     @callee
-    #   end
+      def callee
+        @callee
+      end
 
-    #   def paren
-    #     @paren
-    #   end
+      def paren
+        @paren
+      end
 
-    #   def arguments
-    #     @arguments
-    #   end
-    # end
+      def arguments
+        @arguments
+      end
+    end
 
     # class GetsExpression < Expression
     #   def initialize(@object : Expression, @name : Token)

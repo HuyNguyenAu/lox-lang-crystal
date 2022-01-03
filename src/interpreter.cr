@@ -5,10 +5,23 @@ require "./token-type.cr"
 require "./runtime-exception.cr"
 require "./environment.cr"
 require "./statement.cr"
+require "./callable.cr"
 
 module Lox
   class Interpreter
-    @environment = Environment.new
+    def initialize
+      # Reference to the outermost global environment.
+      @globals = Environment.new
+      
+      # The current environment.
+      @environment = @globals
+
+      @globals.define("clock", Callable::Clock.new())
+    end
+
+    def globals
+      @globals
+    end
 
     # Go through all statements and evaluate it.
     def interpret(statements : Array(Statement))
@@ -76,6 +89,29 @@ module Lox
       nil
     end
 
+    # Evaluate the expression for the callee and its arguments expressions and store
+    # the results in a list. Invoke the call method with the results of the arguments.
+    def visit_call_expression(expression : Expression)
+      callee = evaluate(expression.callee)
+      arguments = Array(Bool | Float64 | Callable | Expression | String | Nil).new()
+
+      expression.arguments.each() do |argument|
+        arguments << evaluate(argument)
+      end
+
+      unless callee.is_a?(Callable)
+        raise RuntimeException.new(expression.paren, "Can only call functions and classes.")
+      end
+
+      function = callee.as(Callable)
+
+      if arguments.size != function.arity
+        raise RuntimeException.new(expression.paren, "Expected #{function.arity} arguments but got #{arguments.size}.")
+      end
+
+      function.call(self, arguments)
+    end
+
     # A grouping node contains a node which can be
     # recursively deep. We need to go into the expression
     # and evaluate the inner expression.
@@ -98,7 +134,7 @@ module Lox
       else
         return left unless is_truthy(left)
       end
-    
+
       evaluate(expression.right)
     end
 
@@ -138,6 +174,19 @@ module Lox
     # expression and then discard the result.
     def visit_expression_statement(statement : Statement)
       evaluate(statement.expression)
+      
+      nil
+    end
+
+    # Store the the function in the current environment with the current
+    # active environment when the function is declared, not when it's called.
+    # A declaration binds the resulting object to a new
+    # variable.
+    def visit_function_statement(statement : Statement::Function)
+      function = Callable::Function.new(statement, @environment)
+
+      @environment.define(statement.name.lexeme, function)
+
       nil
     end
 
@@ -168,6 +217,17 @@ module Lox
       end
 
       nil
+    end
+
+    # We use an exception to unwind the interpreter past the visit methods of all
+    # containg statements back to the code that started the executing body.
+    def visit_return_statement(statement : Statement)
+      statement_value = statement.value
+      
+      value = nil
+      value = evaluate(statement_value) unless statement_value.nil?
+
+      raise ReturnException.new(value)
     end
 
     # When we encounter a variable statement we need to store it in out current environment.

@@ -6,7 +6,7 @@ require "../src/interpreter.cr"
 
 module Lox
   class Program
-    @@interpreter : Interpreter = Interpreter.new
+    @@interpreter : Interpreter = Interpreter.new()
     @@had_error : Bool = false
     @@had_runtime_error : Bool = false
 
@@ -89,4 +89,4 @@ module Lox
   end
 end
 
-Lox::Program.new
+Lox::Program.new()

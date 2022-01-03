@@ -14,19 +14,25 @@ module Lox
     # comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
     # term           → factor ( ( "-" | "+" ) factor )* ;
     # factor         → unary ( ( "/" | "*" ) unary )* ;
-    # unary          → ( "!" | "-" ) unary | primary ;
+    # unary          → ( "!" | "-" ) unary | call ;
+    # call           → primary ( "(" arguments? ")" )* ;
+    # arguments      → expression ( "," expression )* ;
     # primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
 
     # Parser grammar:
     # program        → declaration* EOF ;
-    # declaration    → varDecl | statement ;
+    # declaration    → funDecl | varDecl | statement ;
+    # funDecl        → "fun" function ;
+    # function       → IDENTIFIER "(" parameters? ")" block ;
+    # parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
     # varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
-    # statement      → exprStmt | forStmt | ifStmt | printStmt | whileStmt | block ;
+    # statement      → exprStmt | forStmt | ifStmt | printStmt | returnStmt | whileStmt | block ;
     # exprStmt       → expression ";" ;
     # forStmt        → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
     # ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
-    # whileStmt      → "while" "(" expression ")" statement ;
     # printStmt      → "print" expression ";" ;
+    # returnStmt     → "return" expression? ";" ;
+    # whileStmt      → "while" "(" expression ")" statement ;
     # block          → "{" declaration* "}" ;
 
     def initialize(@tokens : Array(Token), @current : Int32 = 0)
@@ -44,7 +50,7 @@ module Lox
       statements
     end
 
-    # Rule: statement → exprStmt | forStmt | ifStmt | printStmt | whileStmt | block ;
+    # Rule: statement → exprStmt | forStmt | ifStmt | printStmt | returnStmt | whileStmt | block ;
     private def statement : Statement
       # puts "statement"
       if match(TokenType::IF)
@@ -57,6 +63,10 @@ module Lox
 
       if match(TokenType::PRINT)
         return print_statement()
+      end
+
+      if match(TokenType::RETURN)
+        return return_statement()
       end
 
       if match(TokenType::WHILE)
@@ -105,7 +115,7 @@ module Lox
 
       condition = nil
 
-      if !check(TokenType::SEMICOLON)
+      unless check(TokenType::SEMICOLON)
         condition = expression()
       end
 
@@ -113,7 +123,7 @@ module Lox
 
       increment = nil
 
-      if !check(TokenType::RIGHT_PAREN)
+      unless check(TokenType::RIGHT_PAREN)
         increment = expression()
       end
 
@@ -121,7 +131,7 @@ module Lox
 
       body = statement()
 
-      if !increment.nil?
+      unless increment.nil?
         statements = [body, Statement::Expression.new(increment)]
         body = Statement::Block.new(statements)
       end
@@ -132,7 +142,7 @@ module Lox
 
       body = Statement::While.new(condition, body)
 
-      if !initialiser.nil?
+      unless initialiser.nil?
         statements = [initialiser, body]
         body = Statement::Block.new(statements)
       end
@@ -146,7 +156,54 @@ module Lox
       value = expression()
 
       consume(TokenType::SEMICOLON, "Expect ';' after value.")
+      
       Statement::Print.new(value)
+    end
+
+    # Rule: returnStmt → "return" expression? ";" ;
+    private def return_statement : Statement
+      # puts "return_statement"
+      keyword = previous()
+      value = nil
+
+      unless check(TokenType::SEMICOLON)
+        value = expression()
+      end
+
+      consume(TokenType::SEMICOLON, "Expect ';' after return value.")
+
+      Statement::Return.new(keyword, value)
+    end
+
+    # Rule: function → IDENTIFIER "(" parameters? ")" block ;
+    private def function(kind : String) : Statement
+      # puts "function_statement" 
+
+      name = consume(TokenType::IDENTIFIER, "Expect #{kind} name.")
+
+      consume(TokenType::LEFT_PAREN, "Expect '(' after #{kind} name.")
+
+      parameters = Array(Token).new()
+
+      unless check(TokenType::RIGHT_PAREN)
+        loop do
+          if parameters.size() >= 255
+            error(peek(), "Can't have more than 255 parameters.")
+          end
+
+          parameters << consume(TokenType::IDENTIFIER, "Expect parameter name.")
+
+          break unless match(TokenType::COMMA)
+        end
+      end
+
+      consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.")
+      
+      consume(TokenType::LEFT_BRACE, "Expect '{' before #{kind} body.")
+
+      body = block_statement()
+
+      Statement::Function.new(name, parameters, body)
     end
 
     # Rule: varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
@@ -185,7 +242,7 @@ module Lox
 
     # Rule: block → "{" declaration* "}" ;
     def block_statement : Array(Statement)
-      statements = Array(Statement).new
+      statements = Array(Statement).new()
 
       while !check(TokenType::RIGHT_BRACE) && !is_at_end()
         decl = declaration()
@@ -193,13 +250,18 @@ module Lox
       end
 
       consume(TokenType::RIGHT_BRACE, "Expect '}' after block.")
+      
       statements
     end
 
-    # Rule: declaration → varDecl | statement ;
+    # Rule: declaration → funDecl | varDecl | statement ;
     private def declaration : Statement | Nil
       # puts "declaration"
       begin
+        if match(TokenType::FUN)
+          return function("function")
+        end
+
         if match(TokenType::VAR)
           return var_declaration()
         end
@@ -323,7 +385,7 @@ module Lox
       expression
     end
 
-    # Rule: unary → ( "!" | "-" ) unary | primary ;
+    # Rule: unary → ( "!" | "-" ) unary | call ;
     private def unary : Expression
       # puts "unary"
       if match(TokenType::BANG, TokenType::MINUS)
@@ -332,7 +394,45 @@ module Lox
         return Expression::Unary.new(operator, right)
       end
 
-      primary()
+      call()
+    end
+
+    # Rule: call → primary ( "(" arguments? ")" )* ;
+    private def call
+      expression = primary()
+
+      while true
+        if match(TokenType::LEFT_PAREN)
+          expression = finish_call(expression)
+        else
+          break
+        end
+      end
+
+      expression
+    end
+
+    # Parse the arguments of the call expression and
+    # wrap the callee and arguments together into an
+    # AST node.
+    private def finish_call(callee : Expression)
+      arguments = Array(Expression).new()
+
+      if !check(TokenType::RIGHT_PAREN)
+        loop do
+          if arguments.size >= 255
+            error(peek(), "Can't have more than 255 arguments.")
+          end
+
+          arguments << expression()
+
+          break unless match(TokenType::COMMA)
+        end
+      end
+
+      paren = consume(TokenType::RIGHT_PAREN, "Expect ')' after arguments.")
+
+      Expression::Call.new(callee, paren, arguments)
     end
 
     # Rule: primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER;
@@ -404,7 +504,7 @@ module Lox
 
     # Consume the current token and return it.
     private def advance : Token
-      if !is_at_end()
+      unless is_at_end()
         @current += 1
       end
 
