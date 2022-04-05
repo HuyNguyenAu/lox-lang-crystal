@@ -7,3 +7,4 @@
 *.lox
 *.txt
 env
+.DS_Store
