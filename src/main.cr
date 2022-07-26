@@ -3,6 +3,7 @@ require "../src/parser.cr"
 require "../src/expression.cr"
 require "../src/runtime-exception.cr"
 require "../src/interpreter.cr"
+require "../src/resolver.cr"
 
 module Lox
   class Program
@@ -40,6 +41,13 @@ module Lox
       tokens = scanner.scan_tokens()
       parser = Parser.new(tokens)
       statements = parser.parse()
+
+      if @@had_error
+        return
+      end
+
+      resolver = Resolver.new(@@interpreter)
+      resolver.resolve(statements)
 
       if @@had_error
         return

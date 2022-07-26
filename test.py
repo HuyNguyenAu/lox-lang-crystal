@@ -335,7 +335,6 @@ chapters = {
         'test/block/scope.lox',
     ],
     'chap11_resolving': [
-
         'test/closure/reuse_closure_slot.lox',
         'test/closure/assign_to_shadowed_later.lox',
         'test/closure/close_over_later_variable.lox',
@@ -589,8 +588,7 @@ chapters = {
         'test/constructor/return_in_nested_function.lox',
         'test/constructor/early_return.lox',
         'test/block/empty.lox',
-        'test/block/scope.lox',
-        '331 expectations'
+        'test/block/scope.lox'
     ]
 }
 

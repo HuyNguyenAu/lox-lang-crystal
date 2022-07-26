@@ -3,9 +3,13 @@ require "./statement.cr"
 require "./return-exception.cr"
 
 module Lox
+  # An interface for handling named functions.
   abstract class Callable
+    # Get the number of parameters a function expects.
     abstract def arity : Int32
+    # Execute the function call.
     abstract def call(interpreter : Interpreter, arguments : Array(Bool | Float64 | Callable | Expression | String | Nil))
+    # A nicer output for the user to view the function value.
     abstract def to_s : String
 
     class Function < Callable
@@ -16,6 +20,8 @@ module Lox
         @declaration.parameters.size()
       end
 
+      # Each function call gets its own enviroment to ensure recursion will not break due to multiple calls
+      # to the same function.
       def call(interpreter : Interpreter, arguments : Array(Bool | Float64 | Callable | Expression | String | Nil))
         # The @closure creates an environment chain that goes from the function's body
         # through the environments where the functions are declared, and all the way
@@ -43,6 +49,7 @@ module Lox
       end
     end
 
+    # A clock class used to measure performace.
     class Clock < Callable
       def arity : Int32
         0
