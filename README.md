@@ -1,5 +1,5 @@
-# Lox Lang In Crystal Lang
-This is a an implementation of [Crafting Interpreters](https://craftinginterpreters.com/) in Crystal.
+# Crystal Lox
+A Crystal implementation of Lox from [Crafting Interpreters](https://craftinginterpreters.com/).
 
 ## Requirements
 - Crystal 1.2.2
