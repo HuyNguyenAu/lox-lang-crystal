@@ -12,6 +12,10 @@ module Lox
     def initialize
       # Reference to the outermost global environment.
       @globals = Environment.new
+
+      # Store the resolved local variables to determine later
+      # if the variable is a local or global.
+      @locals = Hash(Expression, Int32).new
       
       # The current environment.
       @environment = @globals
@@ -159,14 +163,36 @@ module Lox
     # Forward the work to the environment which makes sure the
     # variable is defined.
     def visit_variable_expression(expression : Expression::Variable)
-      return @environment.get(expression.name)
+      look_up_variable(expression.name, expression)
+    end
+
+    # Look for a variable in the local and global variable space.
+    private def look_up_variable(name : Token, expression : Expression)
+      # Try to look for a local variable.
+      distance = @locals[expression]?
+
+      # If the local variable does not exist, then look for it in the
+      # global variables.
+      unless distance.nil?
+        return @environment.get_at(distance, name.lexeme)
+      else
+        return @globals.get(name)
+      end
     end
 
     # Evaluate the right hand side to get the value, then
-    # store it in the named variable.
+    # store it in the named variable. If the variable scope
+    # distance does not exist, then it is a global variable.
     def visit_assign_expression(expression : Expression::Assign)
       value = evaluate(expression.value)
-      @environment.assign(expression.name, value)
+      distance = @locals[expression]?
+
+      if !distance.nil?
+        @environment.assign_at(distance, expression.name, value)
+      else
+        @globals.assign(expression.name, value)
+      end
+
       value
     end
 
@@ -337,6 +363,10 @@ module Lox
     # the interpreter's visitor implementation for statements.
     private def execute(statement : Statement)
       statement.accept(self)
+    end
+
+    def resolve(expression : Expression, depth : Int32)
+      @locals[expression] = depth
     end
 
     # Execute a list of statements of a given environment (scope).
