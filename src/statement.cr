@@ -19,26 +19,27 @@ module Lox
       end
     end
 
-    # class Class < Statement
-    #   def initialize(@name : Token, superclass : Variable, methods : Array(Function))
-    #   end
+    class Class < Statement
+      # def initialize(@name : Token, superclass : Variable, methods : Array(Function))
+      def initialize(@name : Token, methods : Array(Function))
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
+      def accept(visitor)
+        visitor.visit_class_statement(self)
+      end
 
-    #   def name
-    #     @name
-    #   end
+      def name
+        @name
+      end
 
-    #   def superclass
-    #     @superclass
-    #   end
+      # def superclass
+      #   @superclass
+      # end
 
-    #   def methods
-    #     @methods
-    #   end
-    # end
+      def methods
+        @methods
+      end
+    end
 
     class Expression < Statement
       def initialize(@expression : Lox::Expression)

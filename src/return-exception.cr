@@ -3,7 +3,7 @@ require "./callable.cr"
 
 module Lox
   class ReturnException < Exception
-    def initialize(@value : Bool | Float64 | Callable | Expression | String | Nil)
+    def initialize(@value : Bool | Float64 | Lox::Callable | Lox::Expression | Lox::Instance | String | Nil)
     end
 
     def value

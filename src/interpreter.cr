@@ -6,6 +6,7 @@ require "./runtime-exception.cr"
 require "./environment.cr"
 require "./statement.cr"
 require "./callable.cr"
+require "./klass.cr"
 
 module Lox
   class Interpreter
@@ -45,6 +46,17 @@ module Lox
       nil
     end
 
+    # A class statement begins with a 'class' keyword followed by the
+    # class name identifier.
+    def visit_class_statement(statement : Statement::Class)
+      @environment.define(statement.name.lexeme, nil)
+
+      klass = Klass.new(statement.name.lexeme)
+
+      @environment.assign(statement.name, klass)
+
+      nil
+    end
     # A binary expression evaluates to a value.
     # We need to evaluate the two operands with it's operator.
     def visit_binary_expression(expression : Expression)
@@ -97,7 +109,7 @@ module Lox
     # the results in a list. Invoke the call method with the results of the arguments.
     def visit_call_expression(expression : Expression)
       callee = evaluate(expression.callee)
-      arguments = Array(Bool | Float64 | Callable | Expression | String | Nil).new()
+      arguments = Array(Bool | Float64 | Lox::Callable | Lox::Expression | Lox::Instance | String | Nil).new()
 
       expression.arguments.each() do |argument|
         arguments << evaluate(argument)

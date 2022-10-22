@@ -97,6 +97,15 @@ module Lox
       nil
     end
 
+    # Resolve the class statement.
+    def visit_class_statement(statement : Statement::Class)
+      # Define and declare the name of the function in the current scope.
+      declare(statement.name)
+      define(statement.name)
+
+      nil
+    end
+
     # Resolve the expression statement.
     def visit_expression_statement(statement : Statement::Expression)
       # Only contains a single statement to resolve.

@@ -21,7 +21,8 @@ module Lox
 
     # Parser grammar:
     # program        → declaration* EOF ;
-    # declaration    → funDecl | varDecl | statement ;
+    # declaration    → classDecl | funDecl | varDecl | statement ;
+    # classDecl      → "class" IDENTIFIER "{" function* "}" ;
     # funDecl        → "fun" function ;
     # function       → IDENTIFIER "(" parameters? ")" block ;
     # parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
@@ -246,9 +247,13 @@ module Lox
       statements
     end
 
-    # Rule: declaration → funDecl | varDecl | statement ;
+    # Rule: declaration → classDecl | funDecl | varDecl | statement ;
     private def declaration : Statement | Nil
       begin
+        if match(TokenType::CLASS)
+          return class_declaration()
+        end
+
         if match(TokenType::FUN)
           return function("function")
         end
@@ -256,13 +261,33 @@ module Lox
         if match(TokenType::VAR)
           return var_declaration()
         end
+
         return statement()
+      
       rescue ParseException
         # When we run into an error, skip to the start
         # of the next statement or declaration.
         synchronise()
+        
         return nil
       end
+    end
+
+    # Rule: classDecl → "class" IDENTIFIER "{" function* "}" ;
+    private def class_declaration : Statement
+      name = consume(TokenType::IDENTIFIER, "Expect class name.")
+      
+      consume(TokenType::LEFT_BRACE, "Expect '{' before class body.")
+      
+      methods = Array(Statement::Function).new
+      
+      while !check(TokenType::RIGHT_BRACE) && !is_at_end()
+        methods << function("method")
+      end
+      
+      consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.")
+
+      Statement::Class.new(name, methods)
     end
 
     # Rule: expression → assigment ;

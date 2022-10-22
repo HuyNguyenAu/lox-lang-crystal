@@ -8,7 +8,7 @@ module Lox
     # Get the number of parameters a function expects.
     abstract def arity : Int32
     # Execute the function call.
-    abstract def call(interpreter : Interpreter, arguments : Array(Bool | Float64 | Callable | Expression | String | Nil))
+    abstract def call(interpreter : Interpreter, arguments : Array(Bool | Float64 | Lox::Callable | Lox::Expression | Lox::Instance | String | Nil))
     # A nicer output for the user to view the function value.
     abstract def to_s : String
 
@@ -22,7 +22,7 @@ module Lox
 
       # Each function call gets its own enviroment to ensure recursion will not break due to multiple calls
       # to the same function.
-      def call(interpreter : Interpreter, arguments : Array(Bool | Float64 | Callable | Expression | String | Nil))
+      def call(interpreter : Interpreter, arguments : Array(Bool | Float64 | Lox::Callable | Lox::Expression | Lox::Instance | String | Nil))
         # The @closure creates an environment chain that goes from the function's body
         # through the environments where the functions are declared, and all the way
         # to the global scope.
@@ -55,7 +55,7 @@ module Lox
         0
       end
 
-      def call(interpreter : Interpreter, arguments : Array(Bool | Float64 | Callable | Expression | String | Nil))
+      def call(interpreter : Interpreter, arguments : Array(Bool | Float64 | Lox::Callable | Lox::Expression | Lox::Instance | String | Nil))
         Time.utc.to_unix_ms / 1000.0
       end
 
