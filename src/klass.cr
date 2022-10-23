@@ -11,6 +11,14 @@ module Lox
     def call(interpreter : Interpreter, arguments : Array(Bool | Float64 | Lox::Callable | Lox::Expression | Lox::Instance | String | Nil)) : Lox::Instance
       instance = Instance.new(self)
 
+      initialiser = find_method("init")
+
+      # If we find an 'init' method, bind this instance and invoke it like a normal
+      # method.
+      unless initialiser.nil?
+        initialiser.bind(instance).call(interpreter, arguments)
+      end
+
       instance
     end
 
@@ -31,7 +39,13 @@ module Lox
     end
 
     def arity : Int32
-      0
+      initialiser = find_method("init")
+
+      if initialiser.nil?
+        return 0
+      end
+
+      initialiser.arity()
     end
 
     def to_s : String

@@ -4,7 +4,7 @@ require "./environment.cr"
 
 module Lox
   class Function < Callable
-    def initialize(@declaration : Statement::Function, @closure : Environment)
+    def initialize(@declaration : Statement::Function, @closure : Environment, @is_initialiser : Bool)
     end
 
     def arity : Int32
@@ -29,7 +29,18 @@ module Lox
       begin
         interpreter.execute_block(@declaration.body, environment)
       rescue error : ReturnException
+        # Sometimes using an empty early return is useful. So in this case,
+        # we can allow it.
+        if @is_initialiser
+          return @closure.get_at(0, "this")
+        end
+
         return error.value
+      end
+
+      # If the class 'init' method is called, return the class's 'this'.
+      if @is_initialiser
+        return @closure.get_at(0, "this")
       end
 
       nil
@@ -39,7 +50,8 @@ module Lox
       environment = Environment.new(@closure)
       environment.define("this", instance)
 
-      Lox::Function.new(@declaration, environment)
+      # Create a closure that binds 'this' to a method.
+      Lox::Function.new(@declaration, environment, @is_initialiser)
     end
 
     def to_s : String

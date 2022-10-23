@@ -153,6 +153,13 @@ module Lox
       # is located just outside the method body.
       statement.methods.each() do |method|
         declaration = FunctionType::METHOD
+
+        # Keep track of when we are resolving a initialiser so that we can
+        # disallow return statements in the initialiser.
+        if method.name.lexeme == "init"
+          declaration = FunctionType::INITIALISER
+        end
+
         resolve_function(method, declaration)
       end
 
@@ -227,6 +234,11 @@ module Lox
       initialiser = statement.initialiser
 
       unless initialiser.nil?
+        # Don't allow return statements in initialiser.
+        if @current_function == FunctionType::INITIALISER
+          Program.error(statement.keyword, "Can't return a value from an initialiser.")
+        end
+
         resolve(initialiser)
       end
 

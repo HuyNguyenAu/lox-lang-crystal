@@ -58,7 +58,8 @@ module Lox
 
       # Convert class methods into its AST nodes.
       statement.methods().each() do |method|
-        function = Lox::Function.new(method, @environment)
+        is_initialiser = method.name.lexeme == "init"
+        function = Lox::Function.new(method, @environment, is_initialiser)
         
         methods[method.name.lexeme] = function
       end
@@ -265,7 +266,7 @@ module Lox
     # A declaration binds the resulting object to a new
     # variable.
     def visit_function_statement(statement : Statement::Function)
-      function = Lox::Function.new(statement, @environment)
+      function = Lox::Function.new(statement, @environment, false)
 
       @environment.define(statement.name.lexeme, function)
 
