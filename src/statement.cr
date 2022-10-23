@@ -21,7 +21,7 @@ module Lox
 
     class Class < Statement
       # def initialize(@name : Token, superclass : Variable, methods : Array(Function))
-      def initialize(@name : Token, methods : Array(Function))
+      def initialize(@name : Token, @methods : Array(Function))
       end
 
       def accept(visitor)

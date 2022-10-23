@@ -7,7 +7,7 @@ module Lox
   class Parser
     # Expression grammar:
     # expression     → assigment ;
-    # assignment     → IDENTIFIER "=" assignment | logic_or ;
+    # assignment     → ( call "." )? IDENTIFIER "=" assignment | logic_or ;
     # logic_or       → logic_and ( "or" logic_and )* ;
     # logic_and      → equality ( "and" equality )* ;
     # equality       → comparison ( ( "!=" | "==" ) comparison )* ;
@@ -15,7 +15,7 @@ module Lox
     # term           → factor ( ( "-" | "+" ) factor )* ;
     # factor         → unary ( ( "/" | "*" ) unary )* ;
     # unary          → ( "!" | "-" ) unary | call ;
-    # call           → primary ( "(" arguments? ")" )* ;
+    # call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
     # arguments      → expression ( "," expression )* ;
     # primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
 
@@ -306,6 +306,10 @@ module Lox
         if expression.is_a?(Expression::Variable)
           name = expression.as(Expression::Variable).name
           return Expression::Assign.new(name, value)
+
+        elsif expression.is_a?(Expression::Get)
+          get = expression.as(Expression::Get)
+          return Expression::Set.new(get.object, get.name, value)
         end
 
         error(equals, "Invalid assignment target.")
@@ -405,13 +409,16 @@ module Lox
       call()
     end
 
-    # Rule: call → primary ( "(" arguments? ")" )* ;
+    # Rule: call → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
     private def call
       expression = primary()
 
       while true
         if match(TokenType::LEFT_PAREN)
           expression = finish_call(expression)
+        elsif match(TokenType::DOT)
+          name = consume(TokenType::IDENTIFIER, "Expect property name after '.'.")
+          expression = Expression::Get.new(expression, name)
         else
           break
         end

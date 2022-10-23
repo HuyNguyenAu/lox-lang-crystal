@@ -6,7 +6,10 @@ require "./runtime-exception.cr"
 require "./environment.cr"
 require "./statement.cr"
 require "./callable.cr"
+require "./clock.cr"
 require "./klass.cr"
+require "./function.cr"
+require "./instance.cr"
 
 module Lox
   class Interpreter
@@ -21,7 +24,7 @@ module Lox
       # The current environment.
       @environment = @globals
 
-      @globals.define("clock", Callable::Clock.new())
+      @globals.define("clock", Lox::Clock.new())
     end
 
     def globals
@@ -51,7 +54,16 @@ module Lox
     def visit_class_statement(statement : Statement::Class)
       @environment.define(statement.name.lexeme, nil)
 
-      klass = Klass.new(statement.name.lexeme)
+      methods = Hash(String, Lox::Function).new()
+
+      # Convert class methods into its AST nodes.
+      statement.methods().each() do |method|
+        function = Lox::Function.new(method, @environment)
+        
+        methods[method.name.lexeme] = function
+      end
+      
+      klass = Klass.new(statement.name.lexeme, methods)
 
       @environment.assign(statement.name, klass)
 
@@ -128,6 +140,19 @@ module Lox
       function.call(self, arguments)
     end
 
+    # Evaluate the expression whose property is being accessed.
+    # Only instances of classes have properties.
+    def visit_get_expression(expression : Expression::Get)
+      object = evaluate(expression.object)
+
+      # Look up the property.
+      if object.is_a?(Instance)
+        return object.as(Instance).get(expression.name)
+      end
+
+      raise RuntimeException.new(expression.name, "Only instances have properties.")
+    end
+
     # A grouping node contains a node which can be
     # recursively deep. We need to go into the expression
     # and evaluate the inner expression.
@@ -152,6 +177,20 @@ module Lox
       end
 
       evaluate(expression.right)
+    end
+
+    # Evaluate the object whose property is being set.
+    def visit_set_expression(expression : Expression::Set)
+      object = evaluate(expression.object)
+
+      if !object.is_a?(Instance)
+        raise RuntimeException.new(expression.name, "Only instances have fields.")
+      end
+
+      value = evaluate(expression.value)
+      object.as(Instance).set(expression.name, value)
+
+      value
     end
 
     # A unary an expression with a preceding '-' or '!'.
@@ -221,7 +260,7 @@ module Lox
     # A declaration binds the resulting object to a new
     # variable.
     def visit_function_statement(statement : Statement::Function)
-      function = Callable::Function.new(statement, @environment)
+      function = Lox::Function.new(statement, @environment)
 
       @environment.define(statement.name.lexeme, function)
 

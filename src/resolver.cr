@@ -43,6 +43,14 @@ module Lox
       end
     end
 
+    # Resolve the get expression. The property is dynamically evaulated, so
+    # there's nothing to resolve here.
+    def visit_get_expression(expression : Expression::Get)
+      # Resolve the expresssion to the left of the dot.
+      resolve(expression.object)
+      nil
+    end
+
     # Resolve the grouping expression.
     def visit_grouping_expression(expression : Expression::Grouping)
       # Resolve the expression inside the parenthesis.
@@ -62,6 +70,15 @@ module Lox
       # Resolve the left and right expressions.
       resolve(expression.left)
       resolve(expression.right)
+
+      nil
+    end
+
+    # Resolve the set expression. The property is dynamically evaulated, so
+    # there's nothing to resolve here.
+    def visit_set_expression(expression : Expression::Set)
+      resolve(expression.value)
+      resolve(expression.object)
 
       nil
     end
@@ -102,6 +119,12 @@ module Lox
       # Define and declare the name of the function in the current scope.
       declare(statement.name)
       define(statement.name)
+
+      # Resolve each method.
+      statement.methods().each() do |method|
+        declaration = FunctionType::METHOD
+        resolve_function(method, declaration)
+      end
 
       nil
     end
