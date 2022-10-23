@@ -157,14 +157,18 @@ module Lox
     #   end
     # end
 
-    # class ThisExpression < Expression
-    #   def initialize(@keyword : Token)
-    #   end
+    class This < Expression
+      def initialize(@keyword : Token)
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
-    # end
+      def accept(visitor)
+        visitor.visit_this_expression(self)
+      end
+
+      def keyword
+        @keyword
+      end
+    end
 
     class Unary < Expression
       def initialize(@operator : Token, @right : Expression)

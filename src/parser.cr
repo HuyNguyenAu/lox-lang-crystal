@@ -470,6 +470,10 @@ module Lox
         return Expression::Literal.new(previous().literal)
       end
 
+      if match(TokenType::THIS)
+        return Expression::This.new(previous())
+      end
+
       if match(TokenType::IDENTIFIER)
         return Expression::Variable.new(previous())
       end

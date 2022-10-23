@@ -35,6 +35,13 @@ module Lox
       nil
     end
 
+    def bind(instance : Lox::Instance) : Lox::Function
+      environment = Environment.new(@closure)
+      environment.define("this", instance)
+
+      Lox::Function.new(@declaration, environment)
+    end
+
     def to_s : String
       "<fn #{@declaration.name.lexeme}>"
     end

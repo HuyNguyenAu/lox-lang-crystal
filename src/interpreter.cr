@@ -193,6 +193,11 @@ module Lox
       value
     end
 
+    # A 'this' variable that will be treated as a variable.
+    def visit_this_expression(expression : Expression::This)
+      look_up_variable(expression.keyword, expression)
+    end
+
     # A unary an expression with a preceding '-' or '!'.
     def visit_unary_expression(expression : Expression)
       right = evaluate(expression.right)
