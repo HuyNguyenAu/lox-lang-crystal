@@ -1,7 +1,7 @@
 from glob import glob
 from os import path
 from sys import argv
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE, STDOUT, TimeoutExpired
 
 with open('env', 'r') as file:
     crafting_interpreters_dir = file.read()
@@ -1135,12 +1135,20 @@ with open('test_results.txt', 'w') as file:
         print(f'Running test {i + 1} of {len(tests)} {test}... ', end='')
         print(f'{crafting_interpreters_dir}/gen/{chapter}/test.jar')
 
-        with Popen(
-            ['java', '-jar', f'{crafting_interpreters_dir}/gen/{chapter}/test.jar', test], stdin=PIPE,
-                stdout=PIPE, stderr=STDOUT, universal_newlines=True)as validation:
+        with Popen(['java', '-jar', f'{crafting_interpreters_dir}/gen/{chapter}/test.jar', test], stdin=PIPE, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as validation:
+            try:
+                validation.wait(timeout=10)
+            except TimeoutExpired:
+                validation.terminate()
+
             validation_output, _ = validation.communicate()
 
         with Popen([custom_interpreter, test], stdin=PIPE, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as training:
+            try:
+                training.wait(timeout=10)
+            except TimeoutExpired:
+                training.terminate()
+
             training_output, _ = training.communicate()
 
         validation_output = validation_output.strip()
