@@ -146,7 +146,7 @@ module Lox
       # Before we start resolving the method bodies, we push a new scope and
       # define 'this' as if it was a variable.
       begin_scope()
-      @scopes[-1]["this"] = true
+      @scopes[0]["this"] = true
 
       # Resolve each method.
       # If we run into a 'this', it will be resolved into local variable which

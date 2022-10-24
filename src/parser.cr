@@ -17,7 +17,7 @@ module Lox
     # unary          → ( "!" | "-" ) unary | call ;
     # call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
     # arguments      → expression ( "," expression )* ;
-    # primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
+    # primary        → NUMBER | STRING | "true" | "false" | "nil" | "this" | "(" expression ")" | IDENTIFIER ;
 
     # Parser grammar:
     # program        → declaration* EOF ;
@@ -448,7 +448,7 @@ module Lox
       Expression::Call.new(callee, paren, arguments)
     end
 
-    # Rule: primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER;
+    # Rule: primary → NUMBER | STRING | "true" | "false" | "nil" | "this" | "(" expression ")" | IDENTIFIER;
     private def primary : Expression
       # puts "primary"
 
