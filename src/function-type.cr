@@ -1,7 +1,8 @@
 module Lox
-    enum FunctionType
-      NONE
-      FUNCTION
-    end
+  enum FunctionType
+    NONE
+    FUNCTION
+    INITIALISER
+    METHOD
   end
-  
+end

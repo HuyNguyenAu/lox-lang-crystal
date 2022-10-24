@@ -1,13 +1,17 @@
 require "./interpreter.cr"
 require "./statement.cr"
 require "./function-type.cr"
+require "./class-type.cr"
 
 module Lox
   # A resolver class to perform static analysis.
   class Resolver
     # Keep track of block scopes currently in scope.
-     @scopes = Array(Hash(String, Bool)).new
-     @current_function : FunctionType = FunctionType::NONE
+    @scopes = Array(Hash(String, Bool)).new
+    # Keep track of return statements and make sure it's not used outside of functions.
+    @current_function : FunctionType = FunctionType::NONE
+    # Keep track of 'this' and make sure it's not used outside of methods.
+    @current_class : ClassType = ClassType::NONE
 
     def initialize(@interpreter : Interpreter)
     end
@@ -36,11 +40,19 @@ module Lox
     def visit_call_expression(expression : Expression::Call)
       # The callee is usually an expression, so it should be resolved as well.
       resolve(expression.callee)
-      
+
       # Walk the argument list and resolve them all.
       expression.arguments.each do |argument|
         resolve(argument)
       end
+    end
+
+    # Resolve the get expression. The property is dynamically evaulated, so
+    # there's nothing to resolve here.
+    def visit_get_expression(expression : Expression::Get)
+      # Resolve the expresssion to the left of the dot.
+      resolve(expression.object)
+      nil
     end
 
     # Resolve the grouping expression.
@@ -66,6 +78,15 @@ module Lox
       nil
     end
 
+    # Resolve the set expression. The property is dynamically evaulated, so
+    # there's nothing to resolve here.
+    def visit_set_expression(expression : Expression::Set)
+      resolve(expression.value)
+      resolve(expression.object)
+
+      nil
+    end
+
     # Resolve the unary expression.
     def visit_unary_expression(expression : Expression::Unary)
       # Resolve its one operand.
@@ -80,9 +101,23 @@ module Lox
       if !@scopes.empty? && @scopes[0][expression.name.lexeme]? == false
         Program.error(expression.name, "Can't read local variable in its own initializer.")
       end
-      
+
       # Resolve the variable.
       resolve_local(expression, expression.name)
+
+      nil
+    end
+
+    # Resolve as a variable with the name 'this'.
+    def visit_this_expression(expression : Expression::This)
+      # Don't allow the 'this' expression outside of a class.
+      if @current_class == ClassType::NONE
+        Program.error(expression.keyword, "Can't use 'this' outside of a class.")
+
+        return nil
+      end
+
+      resolve_local(expression, expression.keyword)
 
       nil
     end
@@ -93,6 +128,44 @@ module Lox
       begin_scope()
       resolve(statement.statements)
       end_scope()
+
+      nil
+    end
+
+    # Resolve the class statement.
+    def visit_class_statement(statement : Statement::Class)
+      # Keep track of the previous class so that we don't lose track
+      # of it in nested classes.
+      enclosing_class = @current_class
+      @current_class = ClassType::CLASS
+
+      # Define and declare the name of the function in the current scope.
+      declare(statement.name)
+      define(statement.name)
+
+      # Before we start resolving the method bodies, we push a new scope and
+      # define 'this' as if it was a variable.
+      begin_scope()
+      @scopes[0]["this"] = true
+
+      # Resolve each method.
+      # If we run into a 'this', it will be resolved into local variable which
+      # is located just outside the method body.
+      statement.methods.each() do |method|
+        declaration = FunctionType::METHOD
+
+        # Keep track of when we are resolving a initialiser so that we can
+        # disallow return statements in the initialiser.
+        if method.name.lexeme == "init"
+          declaration = FunctionType::INITIALISER
+        end
+
+        resolve_function(method, declaration)
+      end
+
+      end_scope()
+
+      @current_class = enclosing_class
 
       nil
     end
@@ -143,11 +216,16 @@ module Lox
       if @current_function == FunctionType::NONE
         Program.error(statement.keyword, "Can't return from top-level code.")
       end
-      
+
       # Only resolve return expression if present.
       value = statement.value
-        
+
       unless value.nil?
+        # Don't allow return statements in initialiser.
+        if @current_function == FunctionType::INITIALISER
+          Program.error(statement.keyword, "Can't return a value from an initialiser.")
+        end
+
         resolve(value)
       end
 
@@ -161,7 +239,7 @@ module Lox
       initialiser = statement.initialiser
 
       unless initialiser.nil?
-        resolve(initialiser) 
+        resolve(initialiser)
       end
 
       define(statement.name)
@@ -195,7 +273,7 @@ module Lox
       end
 
       scope = @scopes[0]
-      
+
       if scope.has_key?(name.lexeme)
         Program.error(name, "Already a variable with this name in this scope.")
       end
@@ -240,7 +318,7 @@ module Lox
     private def resolve_function(function : Statement::Function, type : FunctionType)
       enclosing_function = @current_function
       @current_function = type
-      
+
       # Create a new scope for the body.
       begin_scope()
 
@@ -261,7 +339,7 @@ module Lox
     def resolve_local(expression : Expression, name : Token)
       # Unlike the Java implementation, the innermost scope starts at index 0.
       i = 0
-      
+
       # Start from the innermost scope and work outwards, looking
       # at each scope to find the variable.
       while i <= @scopes.size - 1

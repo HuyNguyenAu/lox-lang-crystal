@@ -7,7 +7,7 @@ module Lox
   class Parser
     # Expression grammar:
     # expression     → assigment ;
-    # assignment     → IDENTIFIER "=" assignment | logic_or ;
+    # assignment     → ( call "." )? IDENTIFIER "=" assignment | logic_or ;
     # logic_or       → logic_and ( "or" logic_and )* ;
     # logic_and      → equality ( "and" equality )* ;
     # equality       → comparison ( ( "!=" | "==" ) comparison )* ;
@@ -15,13 +15,14 @@ module Lox
     # term           → factor ( ( "-" | "+" ) factor )* ;
     # factor         → unary ( ( "/" | "*" ) unary )* ;
     # unary          → ( "!" | "-" ) unary | call ;
-    # call           → primary ( "(" arguments? ")" )* ;
+    # call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
     # arguments      → expression ( "," expression )* ;
-    # primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
+    # primary        → NUMBER | STRING | "true" | "false" | "nil" | "this" | "(" expression ")" | IDENTIFIER ;
 
     # Parser grammar:
     # program        → declaration* EOF ;
-    # declaration    → funDecl | varDecl | statement ;
+    # declaration    → classDecl | funDecl | varDecl | statement ;
+    # classDecl      → "class" IDENTIFIER "{" function* "}" ;
     # funDecl        → "fun" function ;
     # function       → IDENTIFIER "(" parameters? ")" block ;
     # parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
@@ -153,7 +154,7 @@ module Lox
       value = expression()
 
       consume(TokenType::SEMICOLON, "Expect ';' after value.")
-      
+
       Statement::Print.new(value)
     end
 
@@ -177,11 +178,11 @@ module Lox
 
       consume(TokenType::LEFT_PAREN, "Expect '(' after #{kind} name.")
 
-      parameters = Array(Token).new()
+      parameters = Array(Token).new
 
       unless check(TokenType::RIGHT_PAREN)
         loop do
-          if parameters.size() >= 255
+          if parameters.size >= 255
             error(peek(), "Can't have more than 255 parameters.")
           end
 
@@ -192,7 +193,7 @@ module Lox
       end
 
       consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.")
-      
+
       consume(TokenType::LEFT_BRACE, "Expect '{' before #{kind} body.")
 
       body = block_statement()
@@ -234,7 +235,7 @@ module Lox
 
     # Rule: block → "{" declaration* "}" ;
     def block_statement : Array(Statement)
-      statements = Array(Statement).new()
+      statements = Array(Statement).new
 
       while !check(TokenType::RIGHT_BRACE) && !is_at_end()
         decl = declaration()
@@ -242,13 +243,17 @@ module Lox
       end
 
       consume(TokenType::RIGHT_BRACE, "Expect '}' after block.")
-      
+
       statements
     end
 
-    # Rule: declaration → funDecl | varDecl | statement ;
+    # Rule: declaration → classDecl | funDecl | varDecl | statement ;
     private def declaration : Statement | Nil
       begin
+        if match(TokenType::CLASS)
+          return class_declaration()
+        end
+
         if match(TokenType::FUN)
           return function("function")
         end
@@ -256,13 +261,32 @@ module Lox
         if match(TokenType::VAR)
           return var_declaration()
         end
+
         return statement()
       rescue ParseException
         # When we run into an error, skip to the start
         # of the next statement or declaration.
         synchronise()
+
         return nil
       end
+    end
+
+    # Rule: classDecl → "class" IDENTIFIER "{" function* "}" ;
+    private def class_declaration : Statement
+      name = consume(TokenType::IDENTIFIER, "Expect class name.")
+
+      consume(TokenType::LEFT_BRACE, "Expect '{' before class body.")
+
+      methods = Array(Statement::Function).new
+
+      while !check(TokenType::RIGHT_BRACE) && !is_at_end()
+        methods << function("method")
+      end
+
+      consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.")
+
+      Statement::Class.new(name, methods)
     end
 
     # Rule: expression → assigment ;
@@ -281,6 +305,9 @@ module Lox
         if expression.is_a?(Expression::Variable)
           name = expression.as(Expression::Variable).name
           return Expression::Assign.new(name, value)
+        elsif expression.is_a?(Expression::Get)
+          get = expression.as(Expression::Get)
+          return Expression::Set.new(get.object, get.name, value)
         end
 
         error(equals, "Invalid assignment target.")
@@ -380,13 +407,16 @@ module Lox
       call()
     end
 
-    # Rule: call → primary ( "(" arguments? ")" )* ;
+    # Rule: call → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
     private def call
       expression = primary()
 
       while true
         if match(TokenType::LEFT_PAREN)
           expression = finish_call(expression)
+        elsif match(TokenType::DOT)
+          name = consume(TokenType::IDENTIFIER, "Expect property name after '.'.")
+          expression = Expression::Get.new(expression, name)
         else
           break
         end
@@ -399,7 +429,7 @@ module Lox
     # wrap the callee and arguments together into an
     # AST node.
     private def finish_call(callee : Expression)
-      arguments = Array(Expression).new()
+      arguments = Array(Expression).new
 
       if !check(TokenType::RIGHT_PAREN)
         loop do
@@ -418,7 +448,7 @@ module Lox
       Expression::Call.new(callee, paren, arguments)
     end
 
-    # Rule: primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER;
+    # Rule: primary → NUMBER | STRING | "true" | "false" | "nil" | "this" | "(" expression ")" | IDENTIFIER;
     private def primary : Expression
       # puts "primary"
 
@@ -436,6 +466,10 @@ module Lox
 
       if match(TokenType::NUMBER, TokenType::STRING)
         return Expression::Literal.new(previous().literal)
+      end
+
+      if match(TokenType::THIS)
+        return Expression::This.new(previous())
       end
 
       if match(TokenType::IDENTIFIER)

@@ -4,7 +4,7 @@ require "../src/token.cr"
 
 module Lox
   class Scanner
-    @tokens : Array(Token) = Array(Token).new()
+    @tokens : Array(Token) = Array(Token).new
     @start : Int32 = 0   # Offset of the first character of the lexeme being scanned.
     @current : Int32 = 0 # Offset of the current character being scanned.
     @line : Int32 = 1    # Track the line of the current character is on.
@@ -93,10 +93,6 @@ module Lox
         @line += 1
       when '"'
         string()
-      when 'o'
-        if match('r')
-          add_token(TokenType::OR)
-        end
       else
         if is_digit(c)
           number()
@@ -116,6 +112,7 @@ module Lox
 
       text = @source[@start..(@current - 1)]
       type = @@keywords[text]?
+
       if type.nil?
         type = TokenType::IDENTIFIER
       end

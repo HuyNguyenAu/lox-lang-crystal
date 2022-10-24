@@ -6,6 +6,10 @@ require "./runtime-exception.cr"
 require "./environment.cr"
 require "./statement.cr"
 require "./callable.cr"
+require "./clock.cr"
+require "./klass.cr"
+require "./function.cr"
+require "./instance.cr"
 
 module Lox
   class Interpreter
@@ -16,11 +20,11 @@ module Lox
       # Store the resolved local variables to determine later
       # if the variable is a local or global.
       @locals = Hash(Expression, Int32).new
-      
+
       # The current environment.
       @environment = @globals
 
-      @globals.define("clock", Callable::Clock.new())
+      @globals.define("clock", Lox::Clock.new)
     end
 
     def globals
@@ -42,6 +46,28 @@ module Lox
     # declarations wrapped in curly braces.
     def visit_block_statement(statement : Statement::Block)
       execute_block(statement.statements, Environment.new(@environment))
+      nil
+    end
+
+    # A class statement begins with a 'class' keyword followed by the
+    # class name identifier.
+    def visit_class_statement(statement : Statement::Class)
+      @environment.define(statement.name.lexeme, nil)
+
+      methods = Hash(String, Lox::Function).new
+
+      # Convert class methods into its AST nodes.
+      statement.methods.each() do |method|
+        is_initialiser = method.name.lexeme == "init"
+        function = Lox::Function.new(method, @environment, is_initialiser)
+
+        methods[method.name.lexeme] = function
+      end
+
+      klass = Klass.new(statement.name.lexeme, methods)
+
+      @environment.assign(statement.name, klass)
+
       nil
     end
 
@@ -97,7 +123,7 @@ module Lox
     # the results in a list. Invoke the call method with the results of the arguments.
     def visit_call_expression(expression : Expression)
       callee = evaluate(expression.callee)
-      arguments = Array(Bool | Float64 | Callable | Expression | String | Nil).new()
+      arguments = Array(Bool | Float64 | Lox::Callable | Lox::Expression | Lox::Instance | String | Nil).new
 
       expression.arguments.each() do |argument|
         arguments << evaluate(argument)
@@ -114,6 +140,19 @@ module Lox
       end
 
       function.call(self, arguments)
+    end
+
+    # Evaluate the expression whose property is being accessed.
+    # Only instances of classes have properties.
+    def visit_get_expression(expression : Expression::Get)
+      object = evaluate(expression.object)
+
+      # Look up the property.
+      if object.is_a?(Instance)
+        return object.as(Instance).get(expression.name)
+      end
+
+      raise RuntimeException.new(expression.name, "Only instances have properties.")
     end
 
     # A grouping node contains a node which can be
@@ -140,6 +179,25 @@ module Lox
       end
 
       evaluate(expression.right)
+    end
+
+    # Evaluate the object whose property is being set.
+    def visit_set_expression(expression : Expression::Set)
+      object = evaluate(expression.object)
+
+      if !object.is_a?(Instance)
+        raise RuntimeException.new(expression.name, "Only instances have fields.")
+      end
+
+      value = evaluate(expression.value)
+      object.as(Instance).set(expression.name, value)
+
+      value
+    end
+
+    # A 'this' variable that will be treated as a variable.
+    def visit_this_expression(expression : Expression::This)
+      look_up_variable(expression.keyword, expression)
     end
 
     # A unary an expression with a preceding '-' or '!'.
@@ -200,7 +258,7 @@ module Lox
     # expression and then discard the result.
     def visit_expression_statement(statement : Statement)
       evaluate(statement.expression)
-      
+
       nil
     end
 
@@ -209,7 +267,7 @@ module Lox
     # A declaration binds the resulting object to a new
     # variable.
     def visit_function_statement(statement : Statement::Function)
-      function = Callable::Function.new(statement, @environment)
+      function = Lox::Function.new(statement, @environment, false)
 
       @environment.define(statement.name.lexeme, function)
 
@@ -249,7 +307,7 @@ module Lox
     # containg statements back to the code that started the executing body.
     def visit_return_statement(statement : Statement)
       statement_value = statement.value
-      
+
       value = nil
       value = evaluate(statement_value) unless statement_value.nil?
 

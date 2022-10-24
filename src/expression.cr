@@ -63,22 +63,22 @@ module Lox
       end
     end
 
-    # class GetsExpression < Expression
-    #   def initialize(@object : Expression, @name : Token)
-    #   end
+    class Get < Expression
+      def initialize(@object : Expression, @name : Token)
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
+      def accept(visitor)
+        visitor.visit_get_expression(self)
+      end
 
-    #   def object
-    #     @object
-    #   end
+      def object
+        @object
+      end
 
-    #   def name
-    #     @name
-    #   end
-    # end
+      def name
+        @name
+      end
+    end
 
     class Grouping < Expression
       def initialize(@expression : Expression)
@@ -127,14 +127,26 @@ module Lox
       end
     end
 
-    # class SetsExpression < Expression
-    #   def initialize(@object : Expression, @name : Token, @value : Expression)
-    #   end
+    class Set < Expression
+      def initialize(@object : Expression, @name : Token, @value : Expression)
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
-    # end
+      def accept(visitor)
+        visitor.visit_set_expression(self)
+      end
+
+      def object
+        @object
+      end
+
+      def name
+        @name
+      end
+
+      def value
+        @value
+      end
+    end
 
     # class SuperExpression < Expression
     #   def initialize(@keyword : Token, @method : Token)
@@ -145,14 +157,18 @@ module Lox
     #   end
     # end
 
-    # class ThisExpression < Expression
-    #   def initialize(@keyword : Token)
-    #   end
+    class This < Expression
+      def initialize(@keyword : Token)
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
-    # end
+      def accept(visitor)
+        visitor.visit_this_expression(self)
+      end
+
+      def keyword
+        @keyword
+      end
+    end
 
     class Unary < Expression
       def initialize(@operator : Token, @right : Expression)
