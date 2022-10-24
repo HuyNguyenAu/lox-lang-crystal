@@ -7,7 +7,7 @@ module Lox
   # A resolver class to perform static analysis.
   class Resolver
     # Keep track of block scopes currently in scope.
-    @scopes = Array(Hash(String, Bool)).new()
+    @scopes = Array(Hash(String, Bool)).new
     # Keep track of return statements and make sure it's not used outside of functions.
     @current_function : FunctionType = FunctionType::NONE
     # Keep track of 'this' and make sure it's not used outside of methods.
@@ -113,7 +113,7 @@ module Lox
       # Don't allow the 'this' expression outside of a class.
       if @current_class == ClassType::NONE
         Program.error(expression.keyword, "Can't use 'this' outside of a class.")
-        
+
         return nil
       end
 
@@ -221,6 +221,11 @@ module Lox
       value = statement.value
 
       unless value.nil?
+        # Don't allow return statements in initialiser.
+        if @current_function == FunctionType::INITIALISER
+          Program.error(statement.keyword, "Can't return a value from an initialiser.")
+        end
+
         resolve(value)
       end
 
@@ -234,11 +239,6 @@ module Lox
       initialiser = statement.initialiser
 
       unless initialiser.nil?
-        # Don't allow return statements in initialiser.
-        if @current_function == FunctionType::INITIALISER
-          Program.error(statement.keyword, "Can't return a value from an initialiser.")
-        end
-
         resolve(initialiser)
       end
 

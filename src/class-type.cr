@@ -1,7 +1,6 @@
 module Lox
-    enum ClassType
-      NONE
-      CLASS
-    end
+  enum ClassType
+    NONE
+    CLASS
   end
-  
+end

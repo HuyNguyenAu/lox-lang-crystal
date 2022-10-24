@@ -20,11 +20,11 @@ module Lox
       # Store the resolved local variables to determine later
       # if the variable is a local or global.
       @locals = Hash(Expression, Int32).new
-      
+
       # The current environment.
       @environment = @globals
 
-      @globals.define("clock", Lox::Clock.new())
+      @globals.define("clock", Lox::Clock.new)
     end
 
     def globals
@@ -54,22 +54,23 @@ module Lox
     def visit_class_statement(statement : Statement::Class)
       @environment.define(statement.name.lexeme, nil)
 
-      methods = Hash(String, Lox::Function).new()
+      methods = Hash(String, Lox::Function).new
 
       # Convert class methods into its AST nodes.
-      statement.methods().each() do |method|
+      statement.methods.each() do |method|
         is_initialiser = method.name.lexeme == "init"
         function = Lox::Function.new(method, @environment, is_initialiser)
-        
+
         methods[method.name.lexeme] = function
       end
-      
+
       klass = Klass.new(statement.name.lexeme, methods)
 
       @environment.assign(statement.name, klass)
 
       nil
     end
+
     # A binary expression evaluates to a value.
     # We need to evaluate the two operands with it's operator.
     def visit_binary_expression(expression : Expression)
@@ -122,7 +123,7 @@ module Lox
     # the results in a list. Invoke the call method with the results of the arguments.
     def visit_call_expression(expression : Expression)
       callee = evaluate(expression.callee)
-      arguments = Array(Bool | Float64 | Lox::Callable | Lox::Expression | Lox::Instance | String | Nil).new()
+      arguments = Array(Bool | Float64 | Lox::Callable | Lox::Expression | Lox::Instance | String | Nil).new
 
       expression.arguments.each() do |argument|
         arguments << evaluate(argument)
@@ -257,7 +258,7 @@ module Lox
     # expression and then discard the result.
     def visit_expression_statement(statement : Statement)
       evaluate(statement.expression)
-      
+
       nil
     end
 
@@ -306,7 +307,7 @@ module Lox
     # containg statements back to the code that started the executing body.
     def visit_return_statement(statement : Statement)
       statement_value = statement.value
-      
+
       value = nil
       value = evaluate(statement_value) unless statement_value.nil?
 

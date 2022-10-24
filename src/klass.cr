@@ -45,7 +45,7 @@ module Lox
         return 0
       end
 
-      initialiser.arity()
+      initialiser.arity
     end
 
     def to_s : String

@@ -18,11 +18,11 @@ module Lox
       # name.
       method = @klass.find_method(name.lexeme)
 
-      unless method.nil?()
+      unless method.nil?
         return method.bind(self)
       end
 
-      raise RuntimeException.new(name, "Undefined property '#{name.lexeme}'.") 
+      raise RuntimeException.new(name, "Undefined property '#{name.lexeme}'.")
     end
 
     def set(name : Token, value : Bool | Float64 | Lox::Callable | Lox::Expression | Lox::Instance | String | Nil)
@@ -30,7 +30,7 @@ module Lox
     end
 
     def to_s : String
-      "#{@klass.name} instance" 
+      "#{@klass.name} instance"
     end
   end
 end

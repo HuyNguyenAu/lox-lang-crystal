@@ -7,7 +7,7 @@ require "../src/resolver.cr"
 
 module Lox
   class Program
-    @@interpreter : Interpreter = Interpreter.new()
+    @@interpreter : Interpreter = Interpreter.new
     @@had_error : Bool = false
     @@had_runtime_error : Bool = false
 
@@ -38,9 +38,9 @@ module Lox
     # Scan, parse, and interpret the provioded source.
     def run(source : String)
       scanner = Scanner.new(source)
-      tokens = scanner.scan_tokens()
+      tokens = scanner.scan_tokens
       parser = Parser.new(tokens)
-      statements = parser.parse()
+      statements = parser.parse
 
       if @@had_error
         return
@@ -97,4 +97,4 @@ module Lox
   end
 end
 
-Lox::Program.new()
+Lox::Program.new
