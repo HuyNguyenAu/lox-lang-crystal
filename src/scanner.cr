@@ -93,10 +93,6 @@ module Lox
         @line += 1
       when '"'
         string()
-      when 'o'
-        if match('r')
-          add_token(TokenType::OR)
-        end
       else
         if is_digit(c)
           number()
@@ -116,6 +112,7 @@ module Lox
 
       text = @source[@start..(@current - 1)]
       type = @@keywords[text]?
+
       if type.nil?
         type = TokenType::IDENTIFIER
       end
