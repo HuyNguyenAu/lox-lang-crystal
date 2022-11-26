@@ -17,12 +17,12 @@ module Lox
     # unary          → ( "!" | "-" ) unary | call ;
     # call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
     # arguments      → expression ( "," expression )* ;
-    # primary        → NUMBER | STRING | "true" | "false" | "nil" | "this" | "(" expression ")" | IDENTIFIER ;
+    # primary        → "true" | "false" | "nil" | "this" | NUMBER | STRING | IDENTIFIER | "(" expression ")" | "super" "." IDENTIFIER ;
 
     # Parser grammar:
     # program        → declaration* EOF ;
     # declaration    → classDecl | funDecl | varDecl | statement ;
-    # classDecl      → "class" IDENTIFIER "{" function* "}" ;
+    # classDecl      → class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
     # funDecl        → "fun" function ;
     # function       → IDENTIFIER "(" parameters? ")" block ;
     # parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
@@ -272,9 +272,16 @@ module Lox
       end
     end
 
-    # Rule: classDecl → "class" IDENTIFIER "{" function* "}" ;
+    # Rule: classDecl → "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
     private def class_declaration : Statement
       name = consume(TokenType::IDENTIFIER, "Expect class name.")
+
+      superClass = nil
+
+      if match(TokenType::LESS)
+        consume(TokenType::IDENTIFIER, "Expect superclass name.")
+        superClass = Expression::Variable.new(previous())
+      end
 
       consume(TokenType::LEFT_BRACE, "Expect '{' before class body.")
 
@@ -286,7 +293,7 @@ module Lox
 
       consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.")
 
-      Statement::Class.new(name, methods)
+      Statement::Class.new(name, superClass, methods)
     end
 
     # Rule: expression → assigment ;
@@ -462,6 +469,16 @@ module Lox
 
       if match(TokenType::NIL)
         return Expression::Literal.new(nil)
+      end
+
+      if match(TokenType::SUPER)
+        keyword = previous()
+
+        consume(TokenType::DOT, "Expect '.' after 'super'.")
+
+        method = consume(TokenType::IDENTIFIER, "Expect superclass method name.")
+
+        return Expression::Super.new(keyword, method)
       end
 
       if match(TokenType::NUMBER, TokenType::STRING)

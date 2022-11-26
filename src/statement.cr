@@ -20,8 +20,7 @@ module Lox
     end
 
     class Class < Statement
-      # def initialize(@name : Token, superclass : Variable, methods : Array(Function))
-      def initialize(@name : Token, @methods : Array(Function))
+      def initialize(@name : Token, @superClass : Lox::Expression::Variable | Nil, @methods : Array(Lox::Statement::Function))
       end
 
       def accept(visitor)
@@ -32,9 +31,9 @@ module Lox
         @name
       end
 
-      # def superclass
-      #   @superclass
-      # end
+      def superClass
+        @superClass
+      end
 
       def methods
         @methods

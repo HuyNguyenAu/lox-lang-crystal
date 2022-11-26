@@ -87,6 +87,22 @@ module Lox
       nil
     end
 
+    # Resolve the super expression exactly as a variable.
+    # Find the environment where the super class is stored and
+    # store the number of hops to that environment.
+    def visit_super_expression(expression : Expression::Super)
+      # Make sure super is only inside a sub class.
+      if @current_class == ClassType::NONE
+        Program.error(expression.keyword, "Can't use 'super' outside of a class.")
+      elsif @current_class != ClassType::SUBCLASS
+        Program.error(expression.keyword, "Can't use 'super' in a class with no superclass.")
+      end
+
+      resolve_local(expression, expression.keyword)
+
+      nil
+    end
+
     # Resolve the unary expression.
     def visit_unary_expression(expression : Expression::Unary)
       # Resolve its one operand.
@@ -143,6 +159,27 @@ module Lox
       declare(statement.name)
       define(statement.name)
 
+      # Currently, Crystal's compiler is unable to figure out if a variable is not a
+      # nil after a nil check.
+      superClass = statement.superClass
+
+      # Make sure the super class in not the same as the class name.
+      unless superClass.nil?
+        if statement.name.lexeme == superClass.name.lexeme
+          Program.error(superClass.name, "A class can't inherit from itself.")
+        end
+
+        # The super class name will most likely be a global variable since classes are
+        # declared usually at the top level. A super class can be a local variable since
+        # class declarations are allowed in block statements.
+        @current_class = ClassType::SUBCLASS
+        resolve(superClass)
+
+        # Create a new scope surrounding all it's methods.
+        begin_scope()
+        @scopes[0]["super"] = true
+      end
+
       # Before we start resolving the method bodies, we push a new scope and
       # define 'this' as if it was a variable.
       begin_scope()
@@ -164,6 +201,11 @@ module Lox
       end
 
       end_scope()
+
+      # Disard the scope that surrounds all the methods.
+      unless statement.superClass.nil?
+        end_scope()
+      end
 
       @current_class = enclosing_class
 
