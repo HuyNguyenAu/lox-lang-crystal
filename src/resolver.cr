@@ -172,7 +172,7 @@ module Lox
         # The super class name will most likely be a global variable since classes are
         # declared usually at the top level. A super class can be a local variable since
         # class declarations are allowed in block statements.
-        @currentClass = ClassType::SUBCLASS
+        @current_class = ClassType::SUBCLASS
         resolve(superClass)
 
         # Create a new scope surrounding all it's methods.
