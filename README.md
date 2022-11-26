@@ -1,5 +1,5 @@
 # Crystal Lox
-A Crystal implementation of Lox from [Crafting Interpreters](https://craftinginterpreters.com/) from Chapter 1 to 13.
+A Crystal implementation of Lox from [Crafting Interpreters](https://craftinginterpreters.com/) from Chapter 1 to 13 with the goal of matching the behaviour to be as close as possible to the original Java implementation.
 
 ## Requirements
 - Crystal 1.6.2
@@ -11,6 +11,11 @@ $ sudo chmod +x ./run.sh
 ```
 
 ## Usage
+Create a `hello_world.lox` file:
+``` hello_world.lox
+print "Hello World!"
+```
+
 Run the script:
 ```
 $ ./run.sh hello_world.lox
