@@ -56,10 +56,9 @@ module Lox
       # nil after a nil check.
       superClass = statement.superClass
 
-      
       unless superClass.nil?
         value = evaluate(superClass)
-        
+
         # At this point we don't know if the super class is actually a class object.
         # So we need to check if it is.
         unless value.is_a?(Klass)
@@ -71,6 +70,12 @@ module Lox
 
       @environment.define(statement.name.lexeme, nil)
 
+      # Store the reference to the super class.
+      unless statement.superClass.nil?
+        @environment = Environment.new(@environment)
+        @environment.define("super", superClass)
+      end
+
       methods = Hash(String, Lox::Function).new
 
       # Convert class methods into its AST nodes.
@@ -81,7 +86,15 @@ module Lox
         methods[method.name.lexeme] = function
       end
 
-      klass = Klass.new(statement.name.lexeme, superClass ,methods)
+      klass = Klass.new(statement.name.lexeme, superClass, methods)
+      enclosing = @environment.enclosing
+
+      # Currently Crystal can't check if both are not nil in a single line.
+      unless superClass.nil?
+        unless enclosing.nil?
+          @environment = enclosing
+        end
+      end
 
       @environment.assign(statement.name, klass)
 
@@ -210,6 +223,24 @@ module Lox
       object.as(Instance).set(expression.name, value)
 
       value
+    end
+
+    # Evaluate the super expression by
+    def visit_super_expression(expression : Expression::Super)
+      distance = @locals[expression]
+
+      superClass = @environment.get_at(distance, "super").as(Klass)
+
+      # Hacky. Find a better way.
+      object = @environment.get_at(distance - 1, "this").as(Instance)
+
+      method = superClass.find_method(expression.method.lexeme)
+
+      if method.nil?
+        raise RuntimeException.new(expression.method, "Undefined property '#{expression.method.lexeme}'.")
+      end
+
+      method.bind(object)
     end
 
     # A 'this' variable that will be treated as a variable.

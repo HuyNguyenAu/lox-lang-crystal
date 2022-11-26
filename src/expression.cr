@@ -148,14 +148,22 @@ module Lox
       end
     end
 
-    # class SuperExpression < Expression
-    #   def initialize(@keyword : Token, @method : Token)
-    #   end
+    class Super < Expression
+      def initialize(@keyword : Token, @method : Token)
+      end
 
-    #   def accept(visitor)
-    #     visitor.visit(self)
-    #   end
-    # end
+      def accept(visitor)
+        visitor.visit_super_expression(self)
+      end
+      
+      def keyword
+        @keyword
+      end
+
+      def method
+        @method
+      end
+    end
 
     class This < Expression
       def initialize(@keyword : Token)

@@ -17,7 +17,7 @@ module Lox
     # unary          → ( "!" | "-" ) unary | call ;
     # call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
     # arguments      → expression ( "," expression )* ;
-    # primary        → NUMBER | STRING | "true" | "false" | "nil" | "this" | "(" expression ")" | IDENTIFIER ;
+    # primary        → "true" | "false" | "nil" | "this" | NUMBER | STRING | IDENTIFIER | "(" expression ")" | "super" "." IDENTIFIER ;
 
     # Parser grammar:
     # program        → declaration* EOF ;
@@ -469,6 +469,16 @@ module Lox
 
       if match(TokenType::NIL)
         return Expression::Literal.new(nil)
+      end
+
+      if match(TokenType::SUPER)
+        keyword = previous()
+
+        consume(TokenType::DOT, "Expect '.' after 'super'.")
+
+        method = consume(TokenType::IDENTIFIER, "Expect superclass method name.")
+
+        return Expression::Super.new(keyword, method)
       end
 
       if match(TokenType::NUMBER, TokenType::STRING)
