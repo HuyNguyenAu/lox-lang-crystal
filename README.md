@@ -3,11 +3,13 @@ A Crystal implementation of Lox from [Crafting Interpreters](https://craftingint
 
 ## Requirements
 - Crystal 1.6.2
+- Python 3.10.8
 
 ## Setup
-Set the permissions of the run script:
+Set the permissions of the run and test script:
 ```
 $ sudo chmod +x ./run.sh
+$ sudo chmod +x ./test.sh
 ```
 
 ## Usage
@@ -22,6 +24,12 @@ $ ./run.sh hello_world.lox
 Dependencies are satisfied
 Building: lox-lang-crystal
 Hello World!
+```
+
+## Testing
+Run the following command:
+```
+$ ./test.sh chap13_inheritance
 ```
 
 ## Why?
