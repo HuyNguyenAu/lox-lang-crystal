@@ -143,6 +143,24 @@ module Lox
       declare(statement.name)
       define(statement.name)
 
+      # Currently, Crystal's compiler is unable to figure out if a variable is not a
+      # nil after a nil check.
+      superClass = statement.superClass
+
+      # Make sure the super class in not the same as the class name.
+      unless superClass.nil?
+        if statement.name.lexeme == superClass.name.lexeme
+          Program.error(superClass.name, "A class can't inherit from itself.")
+        end
+
+        # The super class name will most likely be a global variable since classes are
+        # declared usually at the top level. A super class can be a local variable since
+        # class declarations are allowed in block statements.
+        unless superClass.nil?
+          resolve(superClass)
+        end
+      end
+
       # Before we start resolving the method bodies, we push a new scope and
       # define 'this' as if it was a variable.
       begin_scope()

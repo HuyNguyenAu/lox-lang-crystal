@@ -5,7 +5,7 @@ require "./instance.cr"
 module Lox
   #
   class Klass < Callable
-    def initialize(@name : String, @methods : Hash(String, Lox::Function))
+    def initialize(@name : String, @superClass : self | Nil, @methods : Hash(String, Lox::Function))
     end
 
     def call(interpreter : Interpreter, arguments : Array(Bool | Float64 | Lox::Callable | Lox::Expression | Lox::Instance | String | Nil)) : Lox::Instance
@@ -25,6 +25,12 @@ module Lox
     def find_method(name : String) : Lox::Function | Nil
       if @methods.has_key?(name)
         return @methods[name]
+      end
+
+      superClass = @superClass
+
+      unless superClass.nil?
+        return superClass.find_method(name)
       end
 
       nil

@@ -52,6 +52,23 @@ module Lox
     # A class statement begins with a 'class' keyword followed by the
     # class name identifier.
     def visit_class_statement(statement : Statement::Class)
+      # Currently, Crystal's compiler is unable to figure out if a variable is not a
+      # nil after a nil check.
+      superClass = statement.superClass
+
+      
+      unless superClass.nil?
+        value = evaluate(superClass)
+        
+        # At this point we don't know if the super class is actually a class object.
+        # So we need to check if it is.
+        unless value.is_a?(Klass)
+          raise RuntimeException.new(superClass.name, "Superclass must be a class.")
+        end
+
+        superClass = value
+      end
+
       @environment.define(statement.name.lexeme, nil)
 
       methods = Hash(String, Lox::Function).new
@@ -64,7 +81,7 @@ module Lox
         methods[method.name.lexeme] = function
       end
 
-      klass = Klass.new(statement.name.lexeme, methods)
+      klass = Klass.new(statement.name.lexeme, superClass ,methods)
 
       @environment.assign(statement.name, klass)
 

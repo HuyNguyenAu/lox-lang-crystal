@@ -22,7 +22,7 @@ module Lox
     # Parser grammar:
     # program        → declaration* EOF ;
     # declaration    → classDecl | funDecl | varDecl | statement ;
-    # classDecl      → "class" IDENTIFIER "{" function* "}" ;
+    # classDecl      → class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
     # funDecl        → "fun" function ;
     # function       → IDENTIFIER "(" parameters? ")" block ;
     # parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
@@ -272,9 +272,16 @@ module Lox
       end
     end
 
-    # Rule: classDecl → "class" IDENTIFIER "{" function* "}" ;
+    # Rule: classDecl → "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
     private def class_declaration : Statement
       name = consume(TokenType::IDENTIFIER, "Expect class name.")
+
+      superClass = nil
+
+      if match(TokenType::LESS)
+        consume(TokenType::IDENTIFIER, "Expect superclass name.")
+        superClass = Expression::Variable.new(previous())
+      end
 
       consume(TokenType::LEFT_BRACE, "Expect '{' before class body.")
 
@@ -286,7 +293,7 @@ module Lox
 
       consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.")
 
-      Statement::Class.new(name, methods)
+      Statement::Class.new(name, superClass, methods)
     end
 
     # Rule: expression → assigment ;
