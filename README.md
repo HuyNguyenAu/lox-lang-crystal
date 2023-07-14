@@ -1,6 +1,9 @@
 # Crystal Lox
 A Crystal implementation of Lox from [Crafting Interpreters](https://craftinginterpreters.com/) from Chapter 1 to 13 with the goal of matching the behaviour to be as close as possible to the original Java implementation.
 
+Running a simple Fibonacci Sequence program gives the following:
+![Fibonacci Sequence](./fib.jpg)
+
 ## Requirements
 - Crystal 1.6.2
 - Python 3.10.8
